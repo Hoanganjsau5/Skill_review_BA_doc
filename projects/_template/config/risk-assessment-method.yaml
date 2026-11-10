@@ -1,0 +1,16 @@
+# Risk assessment method — do DỰ ÁN định nghĩa.
+# Nếu file này không được định nghĩa (method: null), mọi likelihood/impact/risk_level = not-assessed.
+# Hệ thống không tự bịa thang điểm hay xác suất.
+
+method_version: 0.1.0
+method: null
+
+# Ví dụ cấu trúc (comment, không có hiệu lực):
+# method: qualitative-matrix
+# origin: "<chuẩn/quy trình quản lý rủi ro của tổ chức>"
+# likelihood_scale:
+#   - { value: "<level>", definition: "<định nghĩa do tổ chức đặt ra>" }
+# impact_scale:
+#   - { value: "<level>", definition: "<định nghĩa>" }
+# risk_level_matrix:
+#   - { likelihood: "<level>", impact: "<level>", risk_level: "<level>" }

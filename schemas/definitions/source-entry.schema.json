@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/definitions/source-entry.schema.json",
+  "title": "Source registry (knowledge/source-registry.yaml)",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["registry_version", "sources"],
+  "properties": {
+    "registry_version": { "$ref": "../common/common-defs.schema.json#/$defs/SemVer" },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/SourceEntry" } }
+  },
+  "$defs": {
+    "SourceEntry": {
+      "type": "object",
+      "required": ["source_id", "title", "publisher", "authority_level", "version", "identifier", "retrieved_at", "storage"],
+      "properties": {
+        "source_id": { "type": "string", "pattern": "^SRC-[0-9]{4,}$" },
+        "title": { "type": "string" },
+        "publisher": { "type": "string" },
+        "authority_level": { "enum": ["official-standard", "industry-best-practice", "expert-recommendation", "internal-convention"] },
+        "version": { "type": "string", "description": "Edition/version; 'unversioned' nếu nguồn không có version" },
+        "published_date": { "oneOf": [ { "$ref": "../common/common-defs.schema.json#/$defs/IsoDate" }, { "type": "null" } ] },
+        "identifier": { "type": "string", "description": "URL / ISBN / mã chuẩn" },
+        "retrieved_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDate" },
+        "access_note": { "type": "string" },
+        "storage": { "enum": ["summary-only", "full-text-permitted", "link-only"] },
+        "local_path": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

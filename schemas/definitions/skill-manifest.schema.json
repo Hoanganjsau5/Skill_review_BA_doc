@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/definitions/skill-manifest.schema.json",
+  "title": "Skill manifest (frontmatter của SKILL.md)",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["asset_type", "skill_id", "name", "domain", "version", "status", "applies_to", "depends_on", "sources", "last_verified_at"],
+  "properties": {
+    "asset_type": { "const": "skill" },
+    "skill_id": { "$ref": "../common/common-defs.schema.json#/$defs/SkillId" },
+    "name": { "type": "string" },
+    "domain": { "enum": ["requirement-engineering", "software-design", "software-architecture", "modeling-diagrams", "software-quality-assurance", "feasibility-risk-assessment"] },
+    "version": { "$ref": "../common/common-defs.schema.json#/$defs/SemVer" },
+    "status": { "$ref": "../common/common-defs.schema.json#/$defs/SkillStatus" },
+    "applies_to": { "type": "array", "items": { "type": "string" } },
+    "depends_on": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill_id", "version"],
+        "properties": {
+          "skill_id": { "$ref": "../common/common-defs.schema.json#/$defs/SkillId" },
+          "version": { "$ref": "../common/common-defs.schema.json#/$defs/SemVerRange" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id"],
+        "properties": {
+          "source_id": { "type": "string", "pattern": "^SRC-[0-9]{4,}$" },
+          "version": { "type": "string" },
+          "sections": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "last_verified_at": { "oneOf": [ { "$ref": "../common/common-defs.schema.json#/$defs/IsoDate" }, { "type": "null" } ] },
+    "verified_by": { "type": ["string", "null"] },
+    "needs_reverification": { "type": "boolean", "default": false },
+    "supersedes": { "oneOf": [ { "$ref": "../common/common-defs.schema.json#/$defs/SkillId" }, { "type": "null" } ] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "validated" } } },
+      "then": {
+        "properties": {
+          "last_verified_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDate" },
+          "verified_by": { "type": "string" },
+          "sources": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

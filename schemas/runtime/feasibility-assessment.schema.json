@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/feasibility-assessment.schema.json",
+  "title": "Feasibility Assessment",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["assessment_id", "scope", "verdict", "dimension_results", "evidence", "assumptions", "conditions", "constraints", "confidence", "unresolved_questions", "producer"],
+  "properties": {
+    "assessment_id": { "type": "string", "pattern": "^FA-[A-Za-z0-9-]+$" },
+    "scope": { "$ref": "../common/common-defs.schema.json#/$defs/Scope" },
+    "verdict": { "$ref": "#/$defs/FeasibilityVerdict" },
+    "verdict_rule_applied": { "type": "string", "description": "Ví dụ VR-FR-003" },
+    "dimension_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dimension", "verdict", "summary"],
+        "properties": {
+          "dimension": { "enum": ["requirement-feasibility", "technical-feasibility", "implementation-readiness", "external-dependencies", "project-constraints"] },
+          "in_scope": { "type": "boolean", "default": true },
+          "critical_for_scope": { "type": "boolean" },
+          "verdict": { "$ref": "#/$defs/FeasibilityVerdict" },
+          "summary": { "type": "string" },
+          "finding_ids": { "type": "array", "items": { "type": "string" } },
+          "risk_ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "../common/common-defs.schema.json#/$defs/Evidence" },
+          { "$ref": "../common/common-defs.schema.json#/$defs/ExternalEvidence" }
+        ]
+      }
+    },
+    "assumptions": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/Assumption" } },
+    "conditions": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "confidence": { "$ref": "../common/common-defs.schema.json#/$defs/Confidence" },
+    "unresolved_questions": { "type": "array", "items": { "type": "string" } },
+    "producer": { "$ref": "../common/common-defs.schema.json#/$defs/ProducerRef" }
+  },
+  "$defs": {
+    "FeasibilityVerdict": { "enum": ["feasible", "conditionally-feasible", "not-feasible", "insufficient-evidence"] }
+  },
+  "allOf": [
+    { "if": { "properties": { "verdict": { "const": "conditionally-feasible" } } }, "then": { "properties": { "conditions": { "minItems": 1 } } } },
+    { "if": { "properties": { "verdict": { "enum": ["feasible", "not-feasible"] } } }, "then": { "properties": { "evidence": { "minItems": 1 } } } },
+    { "if": { "properties": { "verdict": { "const": "insufficient-evidence" } } }, "then": { "properties": { "unresolved_questions": { "minItems": 1 } } } }
+  ],
+  "additionalProperties": false
+}

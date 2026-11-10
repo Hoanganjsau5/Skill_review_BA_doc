@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/review-result.schema.json",
+  "title": "Review Result (envelope output chung của mọi Core Agent, trừ report-synthesizer)",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["result_id", "assignment_id", "producer", "status", "completed_at"],
+  "properties": {
+    "result_id": { "type": "string" },
+    "assignment_id": { "type": "string" },
+    "producer": { "$ref": "../common/common-defs.schema.json#/$defs/ProducerRef" },
+    "status": { "enum": ["completed", "partial", "failed"] },
+    "completed_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" },
+    "findings": { "type": "array", "items": { "$ref": "finding.schema.json" } },
+    "risks": { "type": "array", "items": { "$ref": "risk.schema.json" } },
+    "feasibility_assessment": { "$ref": "feasibility-assessment.schema.json" },
+    "delivery_readiness": { "$ref": "delivery-readiness.schema.json" },
+    "critic_validations": { "type": "array", "items": { "$ref": "critic-validation.schema.json" } },
+    "early_feasibility_signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["signal", "evidence"],
+        "properties": {
+          "signal": { "type": "string" },
+          "suspected_dimension": { "enum": ["requirement-feasibility", "technical-feasibility", "implementation-readiness", "external-dependencies", "project-constraints"] },
+          "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "../common/common-defs.schema.json#/$defs/Evidence" } },
+          "related_finding_ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "clarification_requests": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/ClarificationRequest" } },
+    "assumptions_made": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/Assumption" } },
+    "skills_applied": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "failure_reason": { "type": "string" }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "required": ["failure_reason"] } }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/finding.schema.json",
+  "title": "Finding",
+  "description": "Vấn đề tài liệu/thiết kế. basis bắt buộc, đúng một loại (ADR-0006).",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["finding_id", "title", "description", "category", "classification", "severity", "confidence", "basis", "evidence", "rationale", "producer"],
+  "properties": {
+    "finding_id": { "type": "string", "pattern": "^F-[A-Za-z0-9-]+$" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "category": { "type": "string", "description": "Thuộc finding_categories của Profile" },
+    "classification": { "enum": ["confirmed-issue", "potential-issue", "needs-clarification", "improvement-suggestion"] },
+    "severity": { "$ref": "../common/common-defs.schema.json#/$defs/Severity" },
+    "confidence": { "$ref": "../common/common-defs.schema.json#/$defs/Confidence" },
+    "related_documents": { "type": "array", "items": { "type": "string" } },
+    "basis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "criterion_ref"],
+          "properties": {
+            "type": { "const": "criterion" },
+            "criterion_ref": { "$ref": "../common/common-defs.schema.json#/$defs/AssetItemRef" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "analysis_rule_ref"],
+          "properties": {
+            "type": { "const": "analysis-rule" },
+            "analysis_rule_ref": { "$ref": "../common/common-defs.schema.json#/$defs/AssetItemRef" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "comparison_rule_ref"],
+          "properties": {
+            "type": { "const": "comparison-rule" },
+            "comparison_rule_ref": { "$ref": "../common/common-defs.schema.json#/$defs/AssetItemRef" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "const": "expert-judgment" },
+            "note": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "evidence": {
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "../common/common-defs.schema.json#/$defs/Evidence" },
+      "description": "comparison-rule: ≥ 2 evidence từ ≥ 2 artifact khác nhau (artifact khác nhau được kiểm tra bởi validator/Critic)."
+    },
+    "rationale": { "type": "string", "minLength": 1 },
+    "suggested_correction": { "type": "string" },
+    "assumption_refs": { "type": "array", "items": { "type": "string" } },
+    "related_finding_ids": { "type": "array", "items": { "type": "string" } },
+    "producer": { "$ref": "../common/common-defs.schema.json#/$defs/ProducerRef" },
+    "requires_critic": { "type": "boolean" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "basis": { "properties": { "type": { "const": "expert-judgment" } } } } },
+      "then": {
+        "properties": {
+          "classification": { "not": { "const": "confirmed-issue" } },
+          "requires_critic": { "const": true }
+        },
+        "required": ["requires_critic"]
+      }
+    },
+    {
+      "if": { "properties": { "basis": { "properties": { "type": { "const": "comparison-rule" } } } } },
+      "then": { "properties": { "evidence": { "minItems": 2 } } }
+    }
+  ],
+  "additionalProperties": false
+}

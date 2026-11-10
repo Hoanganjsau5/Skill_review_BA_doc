@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/delivery-readiness.schema.json",
+  "title": "Delivery Readiness Assessment",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["assessment_id", "scope", "target_stage", "dor_ref", "verdict", "criteria_results", "blocking_issues", "outstanding_prerequisites", "assumptions", "confidence", "unresolved_questions", "producer"],
+  "properties": {
+    "assessment_id": { "type": "string", "pattern": "^DR-[A-Za-z0-9-]+$" },
+    "scope": { "$ref": "../common/common-defs.schema.json#/$defs/Scope" },
+    "target_stage": { "type": "string" },
+    "dor_ref": {
+      "description": "null khi dự án chưa định nghĩa DoR cho target_stage → verdict bắt buộc insufficient-evidence",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["path", "content_hash"],
+          "properties": {
+            "path": { "type": "string" },
+            "content_hash": { "$ref": "../common/common-defs.schema.json#/$defs/ContentHash" },
+            "dor_version": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        { "type": "null" }
+      ]
+    },
+    "feasibility_ref": { "type": ["string", "null"] },
+    "verdict": { "enum": ["ready", "ready-with-conditions", "not-ready", "insufficient-evidence"] },
+    "verdict_rule_applied": { "type": "string" },
+    "criteria_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dor_criterion_id", "mandatory", "status"],
+        "properties": {
+          "dor_criterion_id": { "type": "string" },
+          "statement": { "type": "string" },
+          "mandatory": { "type": "boolean" },
+          "status": { "enum": ["met", "unmet", "unknown"] },
+          "evidence": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/Evidence" } },
+          "finding_ids": { "type": "array", "items": { "type": "string" } },
+          "risk_ids": { "type": "array", "items": { "type": "string" } },
+          "note": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ref_type", "ref_id", "reason"],
+        "properties": {
+          "ref_type": { "enum": ["finding", "risk", "dor-criterion", "conflict"] },
+          "ref_id": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "outstanding_prerequisites": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/Assumption" } },
+    "confidence": { "$ref": "../common/common-defs.schema.json#/$defs/Confidence" },
+    "unresolved_questions": { "type": "array", "items": { "type": "string" } },
+    "producer": { "$ref": "../common/common-defs.schema.json#/$defs/ProducerRef" }
+  },
+  "allOf": [
+    { "if": { "properties": { "dor_ref": { "type": "null" } } }, "then": { "properties": { "verdict": { "const": "insufficient-evidence" } } } },
+    { "if": { "properties": { "verdict": { "const": "not-ready" } } }, "then": { "properties": { "blocking_issues": { "minItems": 1 } } } },
+    { "if": { "properties": { "verdict": { "const": "ready-with-conditions" } } }, "then": { "properties": { "outstanding_prerequisites": { "minItems": 1 } } } }
+  ],
+  "additionalProperties": false
+}

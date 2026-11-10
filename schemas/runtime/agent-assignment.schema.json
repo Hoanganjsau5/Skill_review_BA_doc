@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/agent-assignment.schema.json",
+  "title": "Agent Assignment",
+  "description": "1 Assignment = đúng 1 Core Agent + tối đa 1 Profile (null chỉ với critic/report-synthesizer). Không gộp nhiều Profile.",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["assignment_id", "run_id", "purpose", "core_agent", "profile", "skills", "scope", "context_slice", "depends_on", "expected_output"],
+  "properties": {
+    "assignment_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "purpose": { "enum": ["review", "assessment", "critic-validation", "revalidation", "report"] },
+    "capability": { "oneOf": [ { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" }, { "type": "null" } ] },
+    "core_agent": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" },
+    "profile": {
+      "description": "Trường ĐƠN — không phải mảng.",
+      "oneOf": [ { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" }, { "type": "null" } ]
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill", "effective_status"],
+        "properties": {
+          "skill": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" },
+          "effective_status": { "enum": ["draft", "under-review", "validated", "deprecated"] },
+          "resolved_dependencies": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rule_sets": {
+      "description": "Rule files của Capability được cấp (ví dụ document-quality consistency-rules)",
+      "type": "array",
+      "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" }
+    },
+    "scope": { "$ref": "../common/common-defs.schema.json#/$defs/Scope" },
+    "context_slice": {
+      "type": "object",
+      "required": ["fields"],
+      "properties": {
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "assumption_ids": { "type": "array", "items": { "type": "string" } },
+        "config_refs": { "type": "array", "items": { "type": "string" }, "description": "Ví dụ: definition-of-ready.yaml, risk-assessment-method.yaml" }
+      },
+      "additionalProperties": false
+    },
+    "inputs_from_assignments": { "type": "array", "items": { "type": "string" }, "description": "assignment_id có output được dùng làm input" },
+    "depends_on": { "type": "array", "items": { "type": "string" } },
+    "parallel_group": { "type": ["string", "null"] },
+    "targets": {
+      "description": "Với critic-validation / revalidation: ID của output cần kiểm chứng",
+      "type": "array", "items": { "type": "string" }
+    },
+    "question": { "type": ["string", "null"], "description": "Câu hỏi hẹp cho revalidation" },
+    "conflict_ref": { "type": ["string", "null"] },
+    "expected_output": { "type": "string", "description": "Schema id của output, ví dụ review-result" },
+    "assembled_instruction_hash": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "purpose": { "enum": ["review", "assessment"] } } },
+      "then": { "properties": { "profile": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } } }
+    },
+    {
+      "if": { "properties": { "purpose": { "enum": ["critic-validation", "revalidation"] } } },
+      "then": { "required": ["targets"], "properties": { "targets": { "minItems": 1 } } }
+    }
+  ],
+  "additionalProperties": false
+}

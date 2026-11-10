@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/final-report.schema.json",
+  "title": "Final Report",
+  "description": "Báo cáo cuối. Không chứa Finding/Risk/Verdict mới — chỉ tham chiếu và trình bày.",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["report_id", "run_id", "project_id", "generated_at", "manifest_ref", "executive_summary", "document_quality", "feasibility_risk", "delivery_readiness", "critical_findings", "unresolved_questions", "recommendations", "conflicts", "coverage_gaps", "reproducibility_statement"],
+  "properties": {
+    "report_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "project_id": { "type": "string" },
+    "generated_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" },
+    "manifest_ref": { "type": "string" },
+    "executive_summary": { "type": "string" },
+    "document_quality": {
+      "type": "object",
+      "required": ["included"],
+      "properties": {
+        "included": { "type": "boolean" },
+        "summary": { "type": "string" },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/ReportedItem" } },
+        "consolidated_groups": { "type": "array", "items": { "type": "string" } },
+        "criteria_gap_signals": { "type": "array", "items": { "type": "string" }, "description": "Finding expert-judgment gợi ý bổ sung criterion/rule" }
+      },
+      "additionalProperties": false
+    },
+    "feasibility_risk": {
+      "type": "object",
+      "required": ["included"],
+      "properties": {
+        "included": { "type": "boolean" },
+        "feasibility_ref": { "type": ["string", "null"] },
+        "verdict": { "enum": ["feasible", "conditionally-feasible", "not-feasible", "insufficient-evidence", null] },
+        "summary": { "type": "string" },
+        "risks": { "type": "array", "items": { "$ref": "#/$defs/ReportedItem" } }
+      },
+      "additionalProperties": false
+    },
+    "delivery_readiness": {
+      "type": "object",
+      "required": ["included"],
+      "properties": {
+        "included": { "type": "boolean" },
+        "readiness_ref": { "type": ["string", "null"] },
+        "target_stage": { "type": ["string", "null"] },
+        "verdict": { "enum": ["ready", "ready-with-conditions", "not-ready", "insufficient-evidence", null] },
+        "summary": { "type": "string" },
+        "blocking_issues": { "type": "array", "items": { "type": "string" } },
+        "outstanding_prerequisites": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "critical_findings": { "type": "array", "items": { "type": "string" }, "description": "ID của Finding/Risk quan trọng nhất" },
+    "unresolved_questions": { "type": "array", "items": { "type": "string" } },
+    "recommendations": { "type": "array", "items": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "related_refs": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false } },
+    "conflicts": { "type": "array", "items": { "type": "string" }, "description": "conflict_id" },
+    "coverage_gaps": { "type": "array", "items": { "type": "object", "required": ["description"], "properties": { "description": { "type": "string" }, "profile": { "type": "string" }, "skill_id": { "type": "string" } }, "additionalProperties": false } },
+    "unvalidated_skills_used": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } },
+    "unconfirmed_assumptions": { "type": "array", "items": { "type": "string" } },
+    "reproducibility_statement": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "ReportedItem": {
+      "type": "object",
+      "required": ["ref_id", "display_status"],
+      "properties": {
+        "ref_id": { "type": "string" },
+        "display_status": { "enum": ["accepted", "rejected", "superseded", "unresolved", "not-validated"] },
+        "superseded_by": { "type": "string" },
+        "conflict_ref": { "type": "string" },
+        "effective_severity": { "$ref": "../common/common-defs.schema.json#/$defs/Severity" },
+        "provisional": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

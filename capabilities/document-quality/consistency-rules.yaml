@@ -1,0 +1,27 @@
+# Domain-agnostic consistency rules của Capability `document-quality`
+# Schema: schemas/definitions/analysis-rule.schema.json
+#
+# Chỉ chứa rule logic nhất quán THUẦN TÚY, không phụ thuộc domain chuyên môn.
+# Rule phụ thuộc domain (ví dụ coverage theo phương pháp RE) phải nằm trong rules.yaml của Skill.
+# Mọi rule có authority_level: internal-convention và phải nêu origin_note.
+#
+# Trạng thái: CHƯA CÓ RULE NÀO. Rule sẽ được bổ sung, review và validate bằng ví dụ trước khi dùng.
+
+owner:
+  owner_type: capability
+  owner_id: document-quality
+  owner_version: 0.1.0
+
+rules: []
+
+# Ví dụ cấu trúc (comment, không có hiệu lực):
+# - rule_id: DQ-CR-001
+#   rule_type: comparison
+#   statement: "<điều kiện nhất quán cần kiểm tra>"
+#   inputs: [any]
+#   method: "<cách so khớp>"
+#   rationale: "<lý do>"
+#   authority_level: internal-convention
+#   origin_note: "<nguồn gốc quy ước: ADR / quyết định nội bộ>"
+#   source_refs: []
+#   validation: { status: unvalidated, examples: [] }

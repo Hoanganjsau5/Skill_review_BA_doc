@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/review-run-manifest.schema.json",
+  "title": "Review Run Manifest",
+  "description": "Truy vết và re-execution. KHÔNG cam kết output giống hệt khi chạy lại. Trường có thể không thu thập được dùng CapturedValue.",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["run", "system_assets", "project_inputs", "instructions", "model", "tools", "retrieval", "decisions", "reproducibility_statement"],
+  "properties": {
+    "run": {
+      "type": "object",
+      "required": ["run_id", "project_id", "started_at", "task_ref"],
+      "properties": {
+        "run_id": { "type": "string", "pattern": "^RUN-[0-9]{8}-[0-9]{4}(-[a-z0-9-]+)?$" },
+        "project_id": { "type": "string" },
+        "started_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" },
+        "completed_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" },
+        "requested_by": { "type": "string" },
+        "task_ref": { "type": "string" },
+        "status": { "enum": ["running", "completed", "partial", "aborted"] }
+      },
+      "additionalProperties": false
+    },
+    "system_assets": {
+      "type": "object",
+      "required": ["system_version", "orchestrator", "workflow_profile", "enabled_phases", "capabilities", "core_agents", "profiles", "skills", "items_cited", "schemas", "coverage_gaps"],
+      "properties": {
+        "system_version": { "$ref": "../common/common-defs.schema.json#/$defs/SemVer" },
+        "orchestrator": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" },
+        "workflow_profile": { "type": "string" },
+        "enabled_phases": { "type": "array", "items": { "type": "integer" } },
+        "capabilities": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } },
+        "core_agents": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } },
+        "profiles": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["skill", "effective_status", "resolved_dependencies"],
+            "properties": {
+              "skill": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" },
+              "effective_status": { "enum": ["draft", "under-review", "validated", "deprecated"] },
+              "resolved_dependencies": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "items_cited": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/AssetItemRef" }, "description": "Criteria/rules thực sự được viện dẫn" },
+        "key_sources": { "type": "array", "items": { "type": "object", "required": ["source_id", "version"], "properties": { "source_id": { "type": "string" }, "version": { "type": "string" } }, "additionalProperties": false } },
+        "schemas": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/VersionRef" } },
+        "coverage_gaps": { "type": "array", "items": { "type": "object", "required": ["skill_id", "reason"], "properties": { "skill_id": { "type": "string" }, "profile": { "type": "string" }, "reason": { "type": "string" } }, "additionalProperties": false } }
+      },
+      "additionalProperties": false
+    },
+    "project_inputs": {
+      "type": "object",
+      "required": ["project_context", "configs", "input_artifacts"],
+      "properties": {
+        "project_context": { "type": "object", "required": ["context_version", "content_hash"], "properties": { "context_version": { "type": "string" }, "content_hash": { "$ref": "../common/common-defs.schema.json#/$defs/ContentHash" } }, "additionalProperties": false },
+        "configs": { "type": "array", "items": { "type": "object", "required": ["path", "content_hash"], "properties": { "path": { "type": "string" }, "content_hash": { "$ref": "../common/common-defs.schema.json#/$defs/ContentHash" } }, "additionalProperties": false } },
+        "input_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "content_hash"],
+            "properties": {
+              "path": { "type": "string" },
+              "content_hash": { "$ref": "../common/common-defs.schema.json#/$defs/ContentHash" },
+              "declared_version": { "type": "string" },
+              "artifact_type": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "instructions": {
+      "type": "object",
+      "required": ["asset_versions_recorded", "assembled_instruction_hashes", "platform_system_prompt"],
+      "properties": {
+        "asset_versions_recorded": { "const": true, "description": "Version của Orchestrator/Core Agent/Profile/Skill đã ghi ở system_assets" },
+        "assembled_instruction_hashes": {
+          "type": "array",
+          "items": { "type": "object", "required": ["assignment_id", "hash"], "properties": { "assignment_id": { "type": "string" }, "hash": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" } }, "additionalProperties": false }
+        },
+        "platform_system_prompt": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" }
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "required": ["provider", "model_identifier", "model_snapshot", "sampling_parameters"],
+      "properties": {
+        "provider": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "model_identifier": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "model_snapshot": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "sampling_parameters": {
+          "type": "object",
+          "properties": {
+            "temperature": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+            "top_p": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+            "max_tokens": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+            "seed": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" }
+          },
+          "additionalProperties": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" }
+        },
+        "per_assignment_overrides": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": false
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tool_id", "version"],
+        "properties": {
+          "tool_id": { "type": "string" },
+          "version": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+          "configuration": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtime_environment": {
+      "type": "object",
+      "properties": {
+        "platform": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "platform_version": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "os": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" }
+      },
+      "additionalProperties": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" }
+    },
+    "retrieval": {
+      "type": "object",
+      "required": ["used"],
+      "properties": {
+        "used": { "type": "boolean" },
+        "kb_snapshot": { "type": "object", "properties": { "registry_version": { "type": "string" }, "content_hash": { "$ref": "../common/common-defs.schema.json#/$defs/ContentHash" } }, "additionalProperties": false },
+        "retriever": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "index_version": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "parameters": { "$ref": "../common/common-defs.schema.json#/$defs/CapturedValue" },
+        "query_log_ref": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "used": { "const": true } } }, "then": { "required": ["kb_snapshot", "retriever", "index_version", "parameters"] } }
+      ],
+      "additionalProperties": false
+    },
+    "decisions": {
+      "type": "object",
+      "required": ["assumptions", "hitl_decisions", "conflict_records"],
+      "properties": {
+        "assumptions": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/Assumption" } },
+        "hitl_decisions": { "type": "array", "items": { "type": "object", "required": ["question", "answer", "decided_by", "decided_at"], "properties": { "question": { "type": "string" }, "answer": { "type": "string" }, "decided_by": { "type": "string" }, "decided_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" } }, "additionalProperties": false } },
+        "conflict_records": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "reproducibility_statement": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

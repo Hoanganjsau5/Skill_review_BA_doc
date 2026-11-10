@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/conflict-record.schema.json",
+  "title": "Conflict Record",
+  "description": "Bản ghi phát hiện và giải quyết conflict. Không sửa output gốc (ADR-0007).",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["conflict_id", "type", "involved_refs", "detected_at", "status"],
+  "properties": {
+    "conflict_id": { "type": "string", "pattern": "^CF-[A-Za-z0-9-]+$" },
+    "type": { "enum": ["CF-DUP", "CF-SCOPE", "CF-ASSUMP", "CF-CONTRA", "CF-RATING", "CF-VERDICT", "CF-CRITIC"] },
+    "involved_refs": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["ref_type", "ref_id"],
+        "properties": {
+          "ref_type": { "enum": ["finding", "risk", "feasibility-assessment", "delivery-readiness", "critic-validation"] },
+          "ref_id": { "type": "string" },
+          "assignment_id": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "detected_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" },
+    "detection_note": { "type": "string" },
+    "scope_comparison": {
+      "type": "object",
+      "properties": {
+        "same_artifact_hash": { "type": "boolean" },
+        "same_scope": { "type": "boolean" },
+        "same_assumptions": { "type": "boolean" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "evidence_assessment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["criterion", "result"],
+        "properties": {
+          "criterion": { "enum": ["direct-evidence", "basis-authority", "evidence-coverage", "assumption-confirmation"] },
+          "result": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "revalidation_rounds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "assignment_id", "question"],
+        "properties": {
+          "round": { "type": "integer", "minimum": 1 },
+          "assignment_id": { "type": "string" },
+          "question": { "type": "string" },
+          "outcome_ref": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "consolidated_group": {
+      "description": "Dùng cho CF-DUP",
+      "type": "object",
+      "properties": {
+        "group_id": { "type": "string" },
+        "member_ids": { "type": "array", "items": { "type": "string" } },
+        "representative_title": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "status": { "enum": ["open", "resolved", "resolved-as-scope-difference", "consolidated", "escalated", "unresolved"] },
+    "decision": {
+      "type": "object",
+      "required": ["rationale", "decided_by", "decided_at"],
+      "properties": {
+        "accepted_refs": { "type": "array", "items": { "type": "string" } },
+        "rejected_refs": { "type": "array", "items": { "type": "string" } },
+        "superseded": {
+          "type": "array",
+          "items": { "type": "object", "required": ["ref_id", "superseded_by"], "properties": { "ref_id": { "type": "string" }, "superseded_by": { "type": "string" } }, "additionalProperties": false }
+        },
+        "effective_rating": {
+          "type": "object",
+          "properties": {
+            "severity": { "$ref": "../common/common-defs.schema.json#/$defs/Severity" },
+            "classification": { "enum": ["confirmed-issue", "potential-issue", "needs-clarification", "improvement-suggestion"] },
+            "provisional": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "rationale": { "type": "string", "minLength": 1 },
+        "decided_by": { "type": "string", "pattern": "^(orchestrator-procedural|critic|human:.+)$" },
+        "decided_at": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDateTime" }
+      },
+      "additionalProperties": false
+    },
+    "hitl_question": { "type": "string" },
+    "impact_on_verdicts": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "enum": ["resolved", "resolved-as-scope-difference", "consolidated"] } } }, "then": { "required": ["decision"] } },
+    { "if": { "properties": { "status": { "const": "escalated" } } }, "then": { "required": ["hitl_question"] } },
+    { "if": { "properties": { "type": { "const": "CF-DUP" } } }, "then": { "required": ["consolidated_group"] } }
+  ],
+  "additionalProperties": false
+}

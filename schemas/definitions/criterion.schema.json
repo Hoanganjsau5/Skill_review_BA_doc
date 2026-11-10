@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/definitions/criterion.schema.json",
+  "title": "Evaluation criteria file (criteria.yaml)",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["owner", "criteria"],
+  "properties": {
+    "owner": {
+      "type": "object",
+      "required": ["owner_type", "owner_id", "owner_version"],
+      "properties": {
+        "owner_type": { "const": "skill" },
+        "owner_id": { "$ref": "../common/common-defs.schema.json#/$defs/SkillId" },
+        "owner_version": { "$ref": "../common/common-defs.schema.json#/$defs/SemVer" }
+      },
+      "additionalProperties": false
+    },
+    "criteria": { "type": "array", "items": { "$ref": "#/$defs/Criterion" } }
+  },
+  "$defs": {
+    "Criterion": {
+      "type": "object",
+      "required": ["criterion_id", "statement", "rationale", "authority_level", "validation"],
+      "properties": {
+        "criterion_id": { "$ref": "../common/common-defs.schema.json#/$defs/ItemId" },
+        "statement": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "applies_to": { "type": "array", "items": { "type": "string" } },
+        "default_severity_hint": { "$ref": "../common/common-defs.schema.json#/$defs/Severity" },
+        "authority_level": {
+          "enum": ["official-standard", "industry-best-practice", "expert-recommendation", "internal-convention"],
+          "description": "project-decision không được phép trong Skill"
+        },
+        "source_refs": { "type": "array", "items": { "$ref": "../common/common-defs.schema.json#/$defs/SourceRef" } },
+        "origin_note": { "type": ["string", "null"] },
+        "synthesis_note": { "type": "string" },
+        "depends_on_items": {
+          "description": "Tham chiếu criterion của Skill khác dạng skill_id@range#ITEM-ID; Skill đó phải có trong depends_on",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z]{2}\\.[a-z0-9-]+@.+#[A-Z0-9-]+$" }
+        },
+        "validation": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["unvalidated", "validated"] },
+            "examples": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "authority_level": { "const": "internal-convention" } } },
+          "then": { "anyOf": [ { "required": ["origin_note"], "properties": { "origin_note": { "type": "string", "minLength": 1 } } }, { "required": ["source_refs"], "properties": { "source_refs": { "minItems": 1 } } } ] },
+          "else": { "required": ["source_refs"], "properties": { "source_refs": { "minItems": 1 } } }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

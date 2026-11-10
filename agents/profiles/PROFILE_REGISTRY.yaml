@@ -1,0 +1,14 @@
+# PROFILE_REGISTRY
+# Chỉ mục Specialist Profiles để Orchestrator routing. Nguồn chân lý là file Profile.
+registry_version: 0.1.0
+profiles:
+  - { id: requirements-review, version: 0.1.0, status: draft, core_agent: artifact-reviewer, capability: document-quality, file: requirements-review.md }
+  - { id: design-review, version: 0.1.0, status: draft, core_agent: artifact-reviewer, capability: document-quality, file: design-review.md }
+  - { id: architecture-review, version: 0.1.0, status: draft, core_agent: artifact-reviewer, capability: document-quality, file: architecture-review.md }
+  - { id: database-review, version: 0.1.0, status: draft, core_agent: artifact-reviewer, capability: document-quality, file: database-review.md }
+  - { id: diagram-review, version: 0.1.0, status: draft, core_agent: artifact-reviewer, capability: document-quality, file: diagram-review.md }
+  - { id: qa-review, version: 0.1.0, status: draft, core_agent: artifact-reviewer, capability: document-quality, file: qa-review.md }
+  - { id: traceability, version: 0.1.0, status: draft, core_agent: cross-artifact-analyzer, capability: document-quality, file: traceability.md }
+  - { id: integration-review, version: 0.1.0, status: draft, core_agent: cross-artifact-analyzer, capability: document-quality, file: integration-review.md }
+  - { id: feasibility-risk, version: 0.1.0, status: draft, core_agent: solution-assessor, capability: feasibility-risk, file: feasibility-risk.md }
+  - { id: delivery-readiness, version: 0.1.0, status: draft, core_agent: solution-assessor, capability: delivery-readiness, file: delivery-readiness.md }

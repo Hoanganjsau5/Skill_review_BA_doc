@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/runtime/project-context.schema.json",
+  "title": "Project Context (projects/<id>/context/project-context.yaml)",
+  "description": "Mỗi trường có status. Thiếu thông tin không đồng nghĩa với thất bại; Orchestrator đánh giá mức ảnh hưởng theo task.",
+  "x-version": "0.1.0",
+  "type": "object",
+  "required": ["project_id", "context_version", "fields"],
+  "properties": {
+    "project_id": { "$ref": "../common/common-defs.schema.json#/$defs/AssetId" },
+    "project_name": { "type": "string" },
+    "context_version": { "$ref": "../common/common-defs.schema.json#/$defs/SemVer" },
+    "last_updated": { "$ref": "../common/common-defs.schema.json#/$defs/IsoDate" },
+    "methodology": { "type": "string", "description": "Agile / Waterfall / Hybrid / … (ảnh hưởng DoR)" },
+    "fields": {
+      "type": "object",
+      "required": [
+        "project_overview", "business_objectives", "functional_scope", "technical_constraints",
+        "business_constraints", "budget", "timeline", "team_capabilities", "infrastructure",
+        "mandatory_technologies", "external_dependencies", "architecture_decisions", "assumptions", "known_limitations"
+      ],
+      "properties": {
+        "project_overview": { "$ref": "#/$defs/ContextField" },
+        "business_objectives": { "$ref": "#/$defs/ContextField" },
+        "functional_scope": { "$ref": "#/$defs/ContextField" },
+        "technical_constraints": { "$ref": "#/$defs/ContextField" },
+        "business_constraints": { "$ref": "#/$defs/ContextField" },
+        "budget": { "$ref": "#/$defs/ContextField" },
+        "timeline": { "$ref": "#/$defs/ContextField" },
+        "team_capabilities": { "$ref": "#/$defs/ContextField" },
+        "infrastructure": { "$ref": "#/$defs/ContextField" },
+        "mandatory_technologies": { "$ref": "#/$defs/ContextField" },
+        "external_dependencies": { "$ref": "#/$defs/ContextField" },
+        "architecture_decisions": { "$ref": "#/$defs/ContextField" },
+        "assumptions": { "$ref": "#/$defs/ContextField" },
+        "known_limitations": { "$ref": "#/$defs/ContextField" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/ContextField" }
+    }
+  },
+  "$defs": {
+    "ContextField": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["provided", "missing", "assumed", "not-applicable"] },
+        "value": { "description": "Chuỗi, danh sách hoặc object tùy trường" },
+        "source": { "type": "string", "description": "Ai/tài liệu nào cung cấp" },
+        "assumption_ref": { "type": "string", "description": "Bắt buộc khi status = assumed" },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "status": { "const": "provided" } } }, "then": { "required": ["value"] } },
+        { "if": { "properties": { "status": { "const": "assumed" } } }, "then": { "required": ["value", "assumption_ref"] } }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

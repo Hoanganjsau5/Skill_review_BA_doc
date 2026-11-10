@@ -1,0 +1,19 @@
+# Definition of Ready — do DỰ ÁN định nghĩa.
+# Hệ thống KHÔNG cung cấp DoR mặc định. Không có DoR cho target_stage → readiness = insufficient-evidence.
+# Tiêu chí nên kiểm tra được bằng evidence từ artifacts, Findings hoặc Risks.
+
+dor_version: 0.1.0
+methodology: null
+stages: []
+
+# Ví dụ cấu trúc (comment, không có hiệu lực):
+# stages:
+#   - stage: development
+#     scope_level: feature            # feature | release | project
+#     criteria:
+#       - dor_criterion_id: DOR-DEV-001
+#         statement: "<tiêu chí do nhóm dự án định nghĩa>"
+#         mandatory: true
+#         blocking_when_unmet: true
+#         evidence_hint: "<artifact hoặc kết quả review dùng làm bằng chứng>"
+#         origin: "<ai/tài liệu nào định nghĩa tiêu chí>"

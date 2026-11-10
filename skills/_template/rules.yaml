@@ -1,0 +1,22 @@
+# Analysis / comparison rules (domain-specific) — Schema: schemas/definitions/analysis-rule.schema.json
+# Dùng bởi cross-artifact-analyzer. Tùy chọn: xóa file nếu Skill không có rule liên tài liệu.
+
+owner:
+  owner_type: skill
+  owner_id: <xx.skill-name>
+  owner_version: 0.1.0
+
+rules: []
+
+# Ví dụ cấu trúc (comment):
+# - rule_id: XX-YY-R001
+#   rule_type: analysis            # analysis | comparison
+#   statement: "<điều kiện cần kiểm tra trên tập artifact>"
+#   inputs: [<artifact-type>, <artifact-type>]
+#   method: "<cách áp dụng>"
+#   rationale: "<lý do>"
+#   authority_level: industry-best-practice
+#   source_refs:
+#     - { source_id: SRC-XXXX, locator: "<clause>" }
+#   origin_note: null              # bắt buộc nếu authority_level = internal-convention
+#   validation: { status: unvalidated, examples: [] }

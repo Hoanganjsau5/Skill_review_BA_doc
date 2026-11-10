@@ -1,0 +1,23 @@
+# Evaluation criteria — Schema: schemas/definitions/criterion.schema.json
+# Mỗi criterion phải: kiểm tra được, có rationale, có authority_level và source_refs.
+# authority_level: official-standard | industry-best-practice | expert-recommendation | internal-convention
+# (project-decision KHÔNG được phép trong Skill)
+
+owner:
+  owner_type: skill
+  owner_id: <xx.skill-name>
+  owner_version: 0.1.0
+
+criteria: []
+
+# Ví dụ cấu trúc (comment):
+# - criterion_id: XX-YY-001
+#   statement: "<tiêu chí có thể kiểm tra>"
+#   rationale: "<lý do>"
+#   applies_to: [<artifact-type>]
+#   default_severity_hint: major        # gợi ý, Agent có thể điều chỉnh kèm lý do
+#   authority_level: official-standard
+#   source_refs:
+#     - { source_id: SRC-XXXX, locator: "<clause/section/page>" }
+#   synthesis_note: "<diễn giải/tổng hợp>"
+#   validation: { status: unvalidated, examples: [] }   # unvalidated | validated

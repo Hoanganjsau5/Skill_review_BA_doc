@@ -1,0 +1,26 @@
+# Review configuration (cấp dự án). Ghi đè các giá trị [configurable] trong SYSTEM_CONFIG.md.
+
+config_version: 0.1.0
+
+default_task_type: full-assessment     # document-review | feasibility-assessment | readiness-check | full-assessment
+workflow_profile: full-assessment      # document-quality-only | feasibility-only | readiness-gate | full-assessment
+enabled_phases: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+target_stage: null                     # ví dụ: development | testing — bắt buộc khi đánh giá readiness
+
+skills:
+  allow_draft_skills: false            # true: cho phép draft/under-review, report gắn cờ
+
+orchestration:
+  parallel_execution: true
+  max_revalidation_rounds_per_conflict: 1
+  unresolved_rating_policy: show-both-use-higher-flagged
+
+critic:
+  validate_severities: [critical, major]
+  always_validate_expert_judgment: true
+  always_validate_verdicts: true
+
+artifact_types:                        # khai báo loại artifact (Orchestrator dùng để routing)
+  # - { path: artifacts/requirements/srs.md, type: srs, declared_version: "1.0" }
+  []

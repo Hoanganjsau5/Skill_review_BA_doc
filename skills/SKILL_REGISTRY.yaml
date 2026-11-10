@@ -1,0 +1,48 @@
+# SKILL_REGISTRY
+# Chỉ mục nhẹ để Orchestrator routing mà không cần nạp toàn bộ Skill.
+# Nguồn chân lý là frontmatter của SKILL.md. Khi Skill được tạo, cập nhật entry tương ứng.
+#
+# Tất cả entry hiện ở trạng thái `planned`: danh sách lấy từ phạm vi Skill Library đã thống nhất.
+# `planned` KHÔNG có nội dung và KHÔNG được dùng trong review.
+
+registry_version: 0.1.0
+skills:
+  # Domain 1: Requirement Engineering
+  - { skill_id: re.srs-review, domain: requirement-engineering, version: null, status: planned, applies_to: [srs], depends_on: [], path: null, summary: "SRS Review" }
+  - { skill_id: re.requirement-quality, domain: requirement-engineering, version: null, status: planned, applies_to: [srs, use-case, user-story], depends_on: [], path: null, summary: "Requirement Quality" }
+  - { skill_id: re.use-case-analysis, domain: requirement-engineering, version: null, status: planned, applies_to: [use-case], depends_on: [], path: null, summary: "Use Case Analysis" }
+  - { skill_id: re.acceptance-criteria, domain: requirement-engineering, version: null, status: planned, applies_to: [acceptance-criteria, user-story], depends_on: [], path: null, summary: "Acceptance Criteria" }
+  - { skill_id: re.requirement-traceability, domain: requirement-engineering, version: null, status: planned, applies_to: [srs, detailed-design, api-spec, test-cases], depends_on: [], path: null, summary: "Requirement Traceability" }
+  # Domain 2: Software Design
+  - { skill_id: sd.basic-design-review, domain: software-design, version: null, status: planned, applies_to: [basic-design, detailed-design], depends_on: [], path: null, summary: "Basic Design Review" }
+  - { skill_id: sd.api-design, domain: software-design, version: null, status: planned, applies_to: [api-spec], depends_on: [], path: null, summary: "API Design" }
+  - { skill_id: sd.database-design, domain: software-design, version: null, status: planned, applies_to: [database-design], depends_on: [], path: null, summary: "Database Design" }
+  - { skill_id: sd.data-modeling, domain: software-design, version: null, status: planned, applies_to: [data-model, database-design], depends_on: [], path: null, summary: "Data Modeling" }
+  - { skill_id: sd.error-handling-design, domain: software-design, version: null, status: planned, applies_to: [detailed-design, api-spec], depends_on: [], path: null, summary: "Error Handling Design" }
+  # Domain 3: Software Architecture
+  - { skill_id: sa.microservices, domain: software-architecture, version: null, status: planned, applies_to: [architecture-document], depends_on: [], path: null, summary: "Microservices Architecture" }
+  - { skill_id: sa.ddd, domain: software-architecture, version: null, status: planned, applies_to: [architecture-document, detailed-design], depends_on: [], path: null, summary: "Domain-Driven Design" }
+  - { skill_id: sa.bff, domain: software-architecture, version: null, status: planned, applies_to: [architecture-document], depends_on: [], path: null, summary: "Backend for Frontend" }
+  - { skill_id: sa.api-gateway, domain: software-architecture, version: null, status: planned, applies_to: [architecture-document], depends_on: [], path: null, summary: "API Gateway" }
+  - { skill_id: sa.distributed-systems, domain: software-architecture, version: null, status: planned, applies_to: [architecture-document], depends_on: [], path: null, summary: "Distributed Systems" }
+  # Domain 4: Modeling & Diagrams
+  - { skill_id: md.uml, domain: modeling-diagrams, version: null, status: planned, applies_to: [uml], depends_on: [], path: null, summary: "UML" }
+  - { skill_id: md.c4-model, domain: modeling-diagrams, version: null, status: planned, applies_to: [c4-diagram, architecture-document], depends_on: [], path: null, summary: "C4 Model" }
+  - { skill_id: md.erd, domain: modeling-diagrams, version: null, status: planned, applies_to: [erd], depends_on: [], path: null, summary: "ERD" }
+  - { skill_id: md.bpmn, domain: modeling-diagrams, version: null, status: planned, applies_to: [bpmn], depends_on: [], path: null, summary: "BPMN" }
+  - { skill_id: md.sequence-diagram, domain: modeling-diagrams, version: null, status: planned, applies_to: [sequence-diagram], depends_on: [], path: null, summary: "Sequence Diagram" }
+  - { skill_id: md.data-flow-diagram, domain: modeling-diagrams, version: null, status: planned, applies_to: [dfd], depends_on: [], path: null, summary: "Data Flow Diagram" }
+  # Domain 5: Software Quality Assurance
+  - { skill_id: qa.test-design, domain: software-quality-assurance, version: null, status: planned, applies_to: [test-design, test-cases], depends_on: [], path: null, summary: "Test Design" }
+  - { skill_id: qa.test-coverage, domain: software-quality-assurance, version: null, status: planned, applies_to: [test-cases, srs], depends_on: [], path: null, summary: "Test Coverage" }
+  - { skill_id: qa.non-functional-testing, domain: software-quality-assurance, version: null, status: planned, applies_to: [test-plan, test-design], depends_on: [], path: null, summary: "Non-functional Testing" }
+  - { skill_id: qa.istqb-principles, domain: software-quality-assurance, version: null, status: planned, applies_to: [test-plan, test-design, test-cases], depends_on: [], path: null, summary: "ISTQB principles" }
+  - { skill_id: qa.defect-management, domain: software-quality-assurance, version: null, status: planned, applies_to: [test-plan], depends_on: [], path: null, summary: "Defect Management" }
+  # Domain 6: Feasibility & Risk Assessment
+  - { skill_id: fr.technical-feasibility, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [srs, architecture-document, detailed-design], depends_on: [], path: null, summary: "Technical Feasibility" }
+  - { skill_id: fr.technology-fit, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [architecture-document], depends_on: [], path: null, summary: "Technology Fit Assessment" }
+  - { skill_id: fr.requirement-conflict-analysis, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [srs], depends_on: [], path: null, summary: "Requirement Conflict Analysis" }
+  - { skill_id: fr.dependency-analysis, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [architecture-document, detailed-design, api-spec], depends_on: [], path: null, summary: "Dependency Analysis" }
+  - { skill_id: fr.risk-assessment, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [any], depends_on: [], path: null, summary: "Risk Identification and Assessment" }
+  - { skill_id: fr.estimation-sanity-check, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [any], depends_on: [], path: null, summary: "Estimation Sanity Check" }
+  - { skill_id: fr.resource-infrastructure-constraints, domain: feasibility-risk-assessment, version: null, status: planned, applies_to: [any], depends_on: [], path: null, summary: "Resource and Infrastructure Constraints" }

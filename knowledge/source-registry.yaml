@@ -1,0 +1,20 @@
+# Source Registry — Schema: schemas/definitions/source-entry.schema.json
+# Trạng thái: CHƯA CÓ NGUỒN NÀO ĐƯỢC ĐĂNG KÝ.
+# Không thêm nguồn khi chưa xác minh được thông tin (title, publisher, edition, URL/định danh).
+
+registry_version: 0.1.0
+sources: []
+
+# Ví dụ cấu trúc (comment, không có hiệu lực):
+# - source_id: SRC-0001
+#   title: "<tên tài liệu>"
+#   publisher: "<tổ chức/tác giả>"
+#   authority_level: official-standard   # official-standard | industry-best-practice | expert-recommendation | internal-convention
+#   version: "<edition/version>"
+#   published_date: "YYYY-MM-DD"         # hoặc null nếu không rõ
+#   identifier: "<URL / ISBN / mã chuẩn>"
+#   retrieved_at: "YYYY-MM-DD"
+#   access_note: "<bản quyền / cách truy cập>"
+#   storage: summary-only                # summary-only | full-text-permitted | link-only
+#   local_path: null                     # đường dẫn tới ghi chú trong knowledge/standards hoặc references
+#   notes: ""

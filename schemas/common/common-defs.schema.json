@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agentic-review-system.example/common/common-defs.schema.json",
+  "title": "Common definitions",
+  "description": "Kiểu dữ liệu dùng chung cho mọi schema. Thang severity/confidence là internal-convention (SYSTEM_CONFIG.md).",
+  "x-version": "0.1.0",
+  "$defs": {
+    "SemVer": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "SemVerRange": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "enum": ["*", "latest", "x", "X"] },
+      "description": "SemVer range: ^x.y.z | ~x.y.z | >=a.b.c <d.e.f | x.y.z. Cấm '*' và 'latest'."
+    },
+    "SkillId": { "type": "string", "pattern": "^[a-z]{2}\\.[a-z0-9]+(-[a-z0-9]+)*$" },
+    "AssetId": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "ItemId": { "type": "string", "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)+$", "description": "criterion_id / rule_id, ví dụ RE-RQ-001, RE-TR-R001" },
+    "IsoDate": { "type": "string", "format": "date" },
+    "IsoDateTime": { "type": "string", "format": "date-time" },
+    "ContentHash": { "type": "string", "pattern": "^(sha256|sha1|md5):[0-9a-fA-F]+$" },
+    "VersionRef": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "$ref": "#/$defs/SemVer" }
+      },
+      "additionalProperties": false
+    },
+    "AssetItemRef": {
+      "description": "Tham chiếu tới criterion/rule trong một asset có version.",
+      "type": "object",
+      "required": ["owner_type", "owner_id", "owner_version", "item_id"],
+      "properties": {
+        "owner_type": { "enum": ["skill", "capability"] },
+        "owner_id": { "type": "string" },
+        "owner_version": { "$ref": "#/$defs/SemVer" },
+        "item_id": { "$ref": "#/$defs/ItemId" }
+      },
+      "additionalProperties": false
+    },
+    "AuthorityLevel": {
+      "enum": ["official-standard", "industry-best-practice", "expert-recommendation", "internal-convention", "project-decision"]
+    },
+    "SkillStatus": { "enum": ["planned", "draft", "under-review", "validated", "deprecated", "retired"] },
+    "Severity": { "enum": ["critical", "major", "minor", "info"] },
+    "Confidence": { "enum": ["high", "medium", "low"] },
+    "SourceRef": {
+      "type": "object",
+      "required": ["source_id", "locator"],
+      "properties": {
+        "source_id": { "type": "string", "pattern": "^SRC-[0-9]{4,}$" },
+        "locator": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "ArtifactLocation": {
+      "type": "object",
+      "required": ["artifact_path"],
+      "properties": {
+        "artifact_id": { "type": "string" },
+        "artifact_path": { "type": "string" },
+        "content_hash": { "$ref": "#/$defs/ContentHash" },
+        "section": { "type": "string" },
+        "page": { "type": "integer", "minimum": 1 },
+        "line_range": { "type": "string", "pattern": "^[0-9]+(-[0-9]+)?$" },
+        "element_id": { "type": "string", "description": "ID phần tử trong artifact (REQ-xx, endpoint, entity, diagram element…)" }
+      },
+      "additionalProperties": false
+    },
+    "Evidence": {
+      "type": "object",
+      "required": ["location"],
+      "properties": {
+        "evidence_id": { "type": "string" },
+        "location": { "$ref": "#/$defs/ArtifactLocation" },
+        "excerpt": { "type": "string", "description": "Trích dẫn ngắn từ artifact" },
+        "observation": { "type": "string", "description": "Quan sát khi không trích dẫn được (ví dụ: phần tử không tồn tại)" }
+      },
+      "anyOf": [ { "required": ["excerpt"] }, { "required": ["observation"] } ],
+      "additionalProperties": false
+    },
+    "ExternalEvidence": {
+      "description": "Evidence ngoài artifact dự án (benchmark do user cung cấp, vendor docs, test results).",
+      "type": "object",
+      "required": ["kind", "description"],
+      "properties": {
+        "kind": { "enum": ["user-benchmark", "vendor-documentation", "reproducible-test", "verified-specification", "research-source", "project-artifact"] },
+        "description": { "type": "string" },
+        "source_ref": { "$ref": "#/$defs/SourceRef" },
+        "location": { "$ref": "#/$defs/ArtifactLocation" },
+        "retrieved_at": { "$ref": "#/$defs/IsoDate" }
+      },
+      "additionalProperties": false
+    },
+    "Assumption": {
+      "type": "object",
+      "required": ["assumption_id", "statement", "source", "status"],
+      "properties": {
+        "assumption_id": { "type": "string", "pattern": "^ASM-[0-9A-Za-z-]+$" },
+        "statement": { "type": "string" },
+        "source": { "enum": ["user-confirmed", "agent-proposed", "project-context"] },
+        "status": { "enum": ["proposed", "confirmed", "rejected"] },
+        "impact": { "enum": ["blocking", "material", "minor", "none"] }
+      },
+      "additionalProperties": false
+    },
+    "CapturedValue": {
+      "type": "object",
+      "required": ["capture_status"],
+      "properties": {
+        "value": {},
+        "capture_status": { "enum": ["captured", "unavailable", "not-applicable"] },
+        "reason": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "capture_status": { "const": "captured" } } }, "then": { "required": ["value"] } },
+        { "if": { "properties": { "capture_status": { "enum": ["unavailable", "not-applicable"] } } }, "then": { "required": ["reason"] } }
+      ],
+      "additionalProperties": false
+    },
+    "ProducerRef": {
+      "type": "object",
+      "required": ["assignment_id", "core_agent", "profile"],
+      "properties": {
+        "assignment_id": { "type": "string" },
+        "core_agent": { "$ref": "#/$defs/VersionRef" },
+        "profile": {
+          "description": "null với critic / report-synthesizer",
+          "oneOf": [ { "$ref": "#/$defs/VersionRef" }, { "type": "null" } ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ClarificationRequest": {
+      "type": "object",
+      "required": ["question", "impact"],
+      "properties": {
+        "question": { "type": "string" },
+        "context_field": { "type": "string" },
+        "impact": { "enum": ["blocking", "material", "minor"] },
+        "related_refs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "Scope": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string" },
+        "artifacts": { "type": "array", "items": { "$ref": "#/$defs/ArtifactLocation" } },
+        "features": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

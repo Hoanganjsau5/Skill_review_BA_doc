@@ -1,0 +1,33 @@
+# Project Context — Schema: schemas/runtime/project-context.schema.json
+# status: provided | missing | assumed | not-applicable
+# - provided: bắt buộc có value
+# - assumed: bắt buộc có value + assumption_ref (ghi trong assumptions-and-limitations.md)
+# Thiếu thông tin KHÔNG đồng nghĩa với dự án thất bại.
+
+project_id: <project-id>
+project_name: "<Project Name>"
+context_version: 0.1.0
+last_updated: null
+methodology: null            # ví dụ: Agile (Scrum) / Waterfall / Hybrid
+
+fields:
+  project_overview:        { status: missing }
+  business_objectives:     { status: missing }
+  functional_scope:        { status: missing }
+  technical_constraints:   { status: missing }
+  business_constraints:    { status: missing }
+  budget:                  { status: missing }
+  timeline:                { status: missing }
+  team_capabilities:       { status: missing }   # ví dụ value: { size: ..., skills: [...], experience_notes: ... }
+  infrastructure:          { status: missing }
+  mandatory_technologies:  { status: missing }
+  external_dependencies:   { status: missing }   # third-party APIs, services, licenses, data, vendor limits
+  architecture_decisions:  { status: missing }   # tham chiếu architecture-decisions.md
+  assumptions:             { status: missing }   # tham chiếu assumptions-and-limitations.md
+  known_limitations:       { status: missing }
+
+# Ví dụ một trường đã điền:
+#   budget:
+#     status: provided
+#     value: "<mô tả ngân sách>"
+#     source: "<người/tài liệu cung cấp>"
