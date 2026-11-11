@@ -1,0 +1,285 @@
+# Golden Test Cases for `re.requirement-traceability`
+# Covers positive, negative, missing-context Not Assessable gates, lifecycle Not Applicable gates, false-positive prevention, and cross-skill ownership boundary cases.
+
+suite_id: re.requirement-traceability.golden-suite
+skill_id: re.requirement-traceability
+skill_version: 0.1.0
+status_enum: [Compliant, Issue, Not Assessable, Not Applicable]
+
+test_cases:
+  - test_id: RTR-GTC-01
+    scenario: "1. Missing backward origin link on REQ-02 and missing forward decomposition/test links on SYS-REQ-02 & REQ-01 (RTR-01, RTR-02)"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->SYS-REQ", "SYS-REQ->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-01, status: Active, text: "Support multi-currency checkout." }
+      system_requirements:
+        - { id: SYS-REQ-01, status: Active, source_need_id: NEED-01, child_req_ids: [REQ-01], text: "The platform shall calculate checkout totals in USD, EUR, and JPY." }
+        - { id: SYS-REQ-02, status: Active, source_need_id: NEED-01, child_req_ids: [], text: "The platform shall refresh FX exchange rates every 15 minutes." }
+      software_requirements:
+        - { id: REQ-01, status: Active, parent_req_id: SYS-REQ-01, test_case_ids: [], text: "The Checkout Service shall convert cart item prices using the active FX rate table." }
+        - { id: REQ-02, status: Active, parent_req_id: null, test_case_ids: [TC-02], text: "The Checkout Service shall round JPY totals to 0 decimal places." }
+      test_cases:
+        - { id: TC-02, status: Active, covers_req_ids: [REQ-02], text: "Verify JPY rounding to 0 decimals." }
+    expected_criterion_statuses:
+      RTR-01: Issue
+      RTR-02: Issue
+      RTR-03: Compliant
+      RTR-04: Compliant
+      RTR-05: Compliant
+      RTR-06: Compliant
+    expected_findings:
+      - criterion_id: RTR-01
+        rule_ids: [RTR-R001]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "REQ-02 has parent_req_id: null, lacking a backward trace link to a parent System Requirement."
+      - criterion_id: RTR-02
+        rule_ids: [RTR-R002, RTR-R003]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "SYS-REQ-02 has empty child_req_ids: [] (missing forward decomposition link RTR-R003); REQ-01 has empty test_case_ids: [] (missing forward verification link RTR-R002)."
+    explanation: "Tests backward link coverage (RTR-01 / RTR-R001) and forward decomposition/verification coverage (RTR-02 / RTR-R002, RTR-R003)."
+
+  - test_id: RTR-GTC-02
+    scenario: "2. Bidirectional traceability asymmetry between Vietnamese SRS and Test Suite (RTR-03)"
+    language: vi
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-PAY-01, status: Active, text: "Hỗ trợ thanh toán qua thẻ nội địa NAPAS." }
+      software_requirements:
+        - { id: REQ-PAY-01, status: Active, source_need_id: NEED-PAY-01, test_case_ids: [TC-PAY-01, TC-PAY-02], text: "Hệ thống phải xử lý giao dịch thanh toán thẻ nội địa qua cổng NAPAS." }
+        - { id: REQ-PAY-02, status: Active, source_need_id: NEED-PAY-01, test_case_ids: [TC-PAY-03], text: "Hệ thống phải hoàn tiền tự động nếu giao dịch NAPAS bị timeout." }
+      test_cases:
+        - { id: TC-PAY-01, status: Active, covers_req_ids: [REQ-PAY-01], text: "Kiểm thử thanh toán thẻ NAPAS thành công." }
+        - { id: TC-PAY-02, status: Active, covers_req_ids: [REQ-PAY-02], text: "Kiểm thử xử lý lỗi thẻ NAPAS." }
+        - { id: TC-PAY-03, status: Active, covers_req_ids: [REQ-PAY-02], text: "Kiểm thử hoàn tiền khi timeout NAPAS." }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Compliant
+      RTR-03: Issue
+      RTR-04: Compliant
+      RTR-05: Compliant
+      RTR-06: Compliant
+    expected_findings:
+      - criterion_id: RTR-03
+        rule_ids: [RTR-R004]
+        type: inconsistency
+        severity: minor
+        confidence: high
+        evidence_excerpt: "Asymmetric link on TC-PAY-02: REQ-PAY-01 lists forward link to TC-PAY-02, but TC-PAY-02 lists backward link to REQ-PAY-02 instead of REQ-PAY-01."
+    explanation: "Tests bidirectional symmetry verification (RTR-03 / RTR-R004) in Vietnamese."
+
+  - test_id: RTR-GTC-03
+    scenario: "3. Broken non-existent target ID, link to a Deprecated Stakeholder Need, and duplicate Requirement ID collision (RTR-04)"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-10, status: Active, text: "Allow users to export reports in CSV." }
+        - { id: NEED-11, status: Deprecated, text: "Allow users to fax reports via analog modem." }
+      software_requirements:
+        - { id: REQ-RPT-10, status: Active, source_need_id: NEED-10, test_case_ids: [TC-RPT-999], text: "The Reporting Service shall export tabular reports in UTF-8 CSV format." }
+        - { id: REQ-RPT-10, status: Active, source_need_id: NEED-11, test_case_ids: [TC-RPT-01], text: "The Reporting Service shall transmit reports over analog fax protocol." }
+      test_cases:
+        - { id: TC-RPT-01, status: Active, covers_req_ids: [REQ-RPT-10], text: "Verify report export." }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Compliant
+      RTR-03: Compliant
+      RTR-04: Issue
+      RTR-05: Compliant
+      RTR-06: Compliant
+    expected_findings:
+      - criterion_id: RTR-04
+        rule_ids: [RTR-R005, RTR-R006, RTR-R007]
+        type: defect
+        severity: major
+        confidence: high
+        evidence_excerpt: "Broken link to non-existent TC-RPT-999 (RTR-R005); active requirement linked to Deprecated NEED-11 (RTR-R006); duplicate ID collision where two distinct requirements both use ID REQ-RPT-10 (RTR-R007)."
+    explanation: "Tests all three reference & identifier integrity failure modes under RTR-04 (RTR-R005, RTR-R006, RTR-R007)."
+
+  - test_id: RTR-GTC-04
+    scenario: "4. Bogus copy-paste trace link to unrelated domain topic and verification method mismatch (RTR-05)"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-SEC-01, status: Active, text: "Protect user accounts from brute-force login attacks." }
+      software_requirements:
+        - { id: REQ-SEC-01, status: Active, verification_method: Test, source_need_id: NEED-SEC-01, test_case_ids: [TC-SHIP-55], text: "The Auth Service shall lock a user account for 30 minutes after 5 consecutive failed password attempts." }
+        - { id: REQ-PERF-01, status: Active, verification_method: Test, source_need_id: NEED-SEC-01, test_case_ids: [VER-INSP-01], text: "The Auth Service shall sustain 5,000 concurrent login requests per second with p99 latency <= 200ms." }
+      test_cases:
+        - { id: TC-SHIP-55, status: Active, covers_req_ids: [REQ-SEC-01], text: "Verify that domestic parcel shipping cost is $0 when cart subtotal exceeds $100." }
+        - { id: VER-INSP-01, status: Active, verification_type: Inspection, covers_req_ids: [REQ-PERF-01], text: "Visual inspection of source code README formatting and license header comments." }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Compliant
+      RTR-03: Compliant
+      RTR-04: Compliant
+      RTR-05: Issue
+      RTR-06: Compliant
+    expected_findings:
+      - criterion_id: RTR-05
+        rule_ids: [RTR-R008, RTR-R009]
+        type: defect
+        severity: major
+        confidence: high
+        evidence_excerpt: "REQ-SEC-01 (account lockout after 5 failed logins) is linked to topically unrelated TC-SHIP-55 (domestic parcel shipping cost) (RTR-R008); REQ-PERF-01 (5,000 rps runtime latency with Verification Method: Test) is linked only to static README visual inspection VER-INSP-01 (RTR-R009)."
+    explanation: "Tests RTR-05 topical relevance check (RTR-R008) and verification method compatibility (RTR-R009)."
+
+  - test_id: RTR-GTC-05
+    scenario: "5. Cross-layer orphan requirement omitted from RTM and unallocated Test Case with no parent requirement (RTR-06)"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-01, status: Active, text: "Allow users to reset passwords." }
+      software_requirements_in_srs:
+        - { id: REQ-01, status: Active, text: "The Auth Service shall send a password reset link valid for 15 minutes." }
+        - { id: REQ-02, status: Active, text: "The Auth Service shall revoke all active refresh tokens upon password reset." }
+      test_cases_in_suite:
+        - { id: TC-01, status: Active, text: "Verify password reset link expiration after 15 minutes." }
+        - { id: TC-99, status: Active, text: "Verify dark-mode theme toggle animation speed." }
+      rtm_rows:
+        - { req_id: REQ-01, backward_need_id: NEED-01, forward_test_ids: [TC-01] }
+    expected_criterion_statuses:
+      RTR-01: Issue
+      RTR-02: Issue
+      RTR-03: Compliant
+      RTR-04: Compliant
+      RTR-05: Compliant
+      RTR-06: Issue
+    expected_findings:
+      - criterion_id: RTR-06
+        rule_ids: [RTR-R010]
+        type: gap
+        severity: minor
+        confidence: high
+        evidence_excerpt: "REQ-02 exists in the SRS inventory but is completely omitted from the RTM (cross-layer orphan requirement); TC-99 exists in the Test Suite inventory but has no backward trace link to any requirement in the RTM (unallocated test case)."
+    explanation: "Tests RTR-06 / RTR-R010 detection of cross-layer orphan requirements and unallocated downstream test cases."
+
+  - test_id: RTR-GTC-06
+    scenario: "6. Missing Trace Context Safeguard — Raw requirement statements with no RTM, trace attributes, or multi-layer artifacts (Not Assessable)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: partial
+      declared_trace_model: null
+      rtm_rows: null
+      software_requirements:
+        - { id: REQ-101, text: "The system shall encrypt all backups using AES-256." }
+    expected_criterion_statuses:
+      RTR-01: Not Assessable
+      RTR-02: Not Assessable
+      RTR-03: Not Assessable
+      RTR-04: Not Assessable
+      RTR-05: Not Assessable
+      RTR-06: Not Assessable
+    expected_findings: []
+    explanation: "When no RTM, trace attributes, or multi-layer artifacts are provided, re.requirement-traceability marks RTR-01..06 as Not Assessable rather than reporting false-positive missing links."
+
+  - test_id: RTR-GTC-07
+    scenario: "7. Unprovided external Test Suite file safeguard — Link presence (RTR-01, RTR-02) is Compliant while target resolution/relevance (RTR-04, RTR-05) are Not Assessable"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: partial
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs: null
+      software_requirements: null
+      test_cases: null
+      rtm_rows:
+        - { req_id: REQ-201, backward_need_id: NEED-20, forward_test_ids: [TC-201] }
+        - { req_id: REQ-202, backward_need_id: NEED-21, forward_test_ids: [TC-202] }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Compliant
+      RTR-03: Not Assessable
+      RTR-04: Not Assessable
+      RTR-05: Not Assessable
+      RTR-06: Not Assessable
+    expected_findings: []
+    explanation: "When only a bare-ID RTM table is provided without the full inventories/texts of Needs, SRS, and Test Cases, RTR-01 and RTR-02 can verify link presence in the table, while RTR-03..06 are marked Not Assessable."
+
+  - test_id: RTR-GTC-08
+    scenario: "8. Early-phase lifecycle gate — Forward links to Design/Test are Not Applicable during early BRD-to-SRS trace review"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      lifecycle_phase: early-requirements-analysis
+      declared_trace_model: ["NEED->REQ"]
+      stakeholder_needs:
+        - { id: NEED-01, status: Active, text: "Allow customers to download monthly account statements in PDF." }
+      software_requirements:
+        - { id: REQ-STM-01, status: Active, source_need_id: NEED-01, text: "The Statement Service shall generate monthly account statements in PDF format within 5 seconds of customer request." }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Not Applicable
+      RTR-03: Not Assessable
+      RTR-04: Compliant
+      RTR-05: Compliant
+      RTR-06: Compliant
+    expected_findings: []
+    explanation: "Because declared_trace_model only includes NEED->REQ at the early requirements analysis stage, forward links to Design/Test (RTR-02) are marked Not Applicable rather than flagged as missing."
+
+  - test_id: RTR-GTC-09
+    scenario: "9. Well-formed, complete, symmetric, and topically relevant bidirectional traceability across all layers (Compliant)"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-30, status: Active, forward_req_ids: [REQ-30], text: "Customers need to lock their payment card immediately if lost." }
+      software_requirements:
+        - { id: REQ-30, status: Active, verification_method: Test, source_need_id: NEED-30, test_case_ids: [TC-30], text: "When a customer selects Freeze Card in the Mobile App, the Card Service shall transition the card status to FROZEN within 2 seconds and decline subsequent authorization requests." }
+      test_cases:
+        - { id: TC-30, status: Active, verification_type: Test, covers_req_ids: [REQ-30], text: "Trigger Freeze Card in Mobile App, verify card status transitions to FROZEN within 2 seconds, and verify a simulated POS authorization request is declined." }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Compliant
+      RTR-03: Compliant
+      RTR-04: Compliant
+      RTR-05: Compliant
+      RTR-06: Compliant
+    expected_findings: []
+    explanation: "All links are present, bidirectionally symmetric, resolve to active unique IDs, and match topically and by verification method. Zero false positives."
+
+  - test_id: RTR-GTC-10
+    scenario: "10. Strict ownership boundary — Semantic stakeholder intent distortion when trace links are structurally valid and topically on-subject belongs to re.requirement-validation, NOT re.requirement-traceability"
+    language: en
+    artifact_type: rtm
+    input_context:
+      completeness_mode: full
+      declared_trace_model: ["NEED->REQ", "REQ->TC"]
+      stakeholder_needs:
+        - { id: NEED-40, status: Active, forward_req_ids: [REQ-40], text: "Allow customers to cancel an unshipped order self-service with a 0% cancellation fee." }
+      software_requirements:
+        - { id: REQ-40, status: Active, verification_method: Test, source_need_id: NEED-40, test_case_ids: [TC-40], text: "When a customer cancels an unshipped order self-service, the Order Service shall charge a 25% cancellation penalty." }
+      test_cases:
+        - { id: TC-40, status: Active, verification_type: Test, covers_req_ids: [REQ-40], text: "Verify that customer self-service cancellation of an unshipped order charges a 25% cancellation penalty." }
+    expected_criterion_statuses:
+      RTR-01: Compliant
+      RTR-02: Compliant
+      RTR-03: Compliant
+      RTR-04: Compliant
+      RTR-05: Compliant
+      RTR-06: Compliant
+    expected_findings: []
+    explanation: "Structurally, NEED-40 <-> REQ-40 <-> TC-40 are linked, symmetric, active, and all govern the exact same topic (Customer Order Cancellation Fee). The semantic conflict between 0% fee in NEED-40 and 25% penalty in REQ-40 is owned exclusively by re.requirement-validation (RVAL-02)."

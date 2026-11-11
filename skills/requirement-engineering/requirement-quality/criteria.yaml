@@ -1,0 +1,324 @@
+# Evaluation criteria for Skill `re.requirement-quality`
+# Schema: schemas/definitions/criterion.schema.json (strictly validated; additionalProperties: false)
+# Language-independent Core Criteria (RQ-01 .. RQ-09) aligned with ISO/IEC/IEEE 29148:2018 Clause 5.2.5.
+# Extended context/status specifications are structured in `synthesis_note` to preserve schema compatibility without modifying shared schemas.
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-quality
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: RQ-01
+    statement: "Necessary — The requirement defines an essential capability, characteristic, constraint, or quality factor that is justified by an identifiable business, stakeholder, parent, or regulatory need."
+    rationale: "Unjustified requirements add scope creep, verification cost, and maintenance burden without delivering traceable value to stakeholders or parent objectives."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Necessary)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Requirement Rationale & Trace to Need)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Necessary" }
+    synthesis_note: |
+      name: Necessary
+      evaluation_objective: Determine whether the requirement is justified by an identifiable need and is not obsolete or redundant within its stated context.
+      pass_conditions:
+        - An identifiable business objective, stakeholder need, parent requirement, regulatory mandate, or explicit rationale is present and justifies the requirement.
+      issue_conditions:
+        - The supplied context explicitly contradicts the need for the requirement (e.g., feature explicitly excluded from scope, obsolete capability, or gold-plating without stakeholder justification).
+      required_context:
+        - Business need, stakeholder need, parent requirement, regulatory source, or explicit requirement rationale.
+      optional_context:
+        - Scope exclusion list, product roadmap, parent traceability link.
+      standalone_assessable_when:
+        - Only when the requirement statement itself explicitly marks the item as obsolete, deprecated, or out of scope; otherwise external context is required.
+      not_assessable_conditions:
+        - No business context, stakeholder need, parent requirement, or rationale is supplied, and the statement itself does not self-declare obsolescence.
+      not_applicable_conditions:
+        - Non-normative informational headings or explanatory notes that do not state a requirement.
+      evidence_expectations:
+        - Exact requirement excerpt and reference/excerpt of the justifying need, scope exclusion, or missing-context observation.
+      scope_boundaries:
+        - Evaluates justification of the individual requirement; full bidirectional traceability matrix coverage across the repository belongs to `re.requirement-traceability`.
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-09, GTC-01, GTC-09]
+
+  - criterion_id: RQ-02
+    statement: "Appropriate — The requirement expresses a level of detail and abstraction suitable for the entity and artifact level to which it applies, avoiding unjustified implementation or design bias."
+    rationale: "Requirements written at the wrong level of abstraction prematurely constrain architecture/design decisions or fail to specify behaviors at the boundary of the target entity."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Appropriate)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Design vs Requirement Separation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Abstraction Level & Valid Constraints)" }
+    synthesis_note: |
+      name: Appropriate
+      evaluation_objective: Determine whether the requirement expresses the appropriate level of detail for its abstraction level without disguising unjustified design choices as requirements.
+      pass_conditions:
+        - The statement specifies what the target entity must achieve at its abstraction level, OR specifies a technical/implementation constraint that is explicitly justified by an architecture decision, external interface contract, or regulatory mandate.
+      issue_conditions:
+        - A high-level requirement (e.g., business, stakeholder, or user-level functional requirement) prescribes internal code structure, database column types, or low-level UI widget mechanics without any constraint justification.
+      required_context:
+        - Requirement level or artifact abstraction level (e.g., business, stakeholder, system, software, interface, constraint).
+      optional_context:
+        - Mandatory technologies (`project-context.yaml`), architecture decisions (`architecture-decisions.md`), regulatory/compliance constraints.
+      standalone_assessable_when:
+        - Assessable when the artifact/requirement level is declared and the statement clearly specifies a pure behavioral obligation at that level.
+      not_assessable_conditions:
+        - The artifact/requirement level is unknown, OR the statement includes a specific technology/implementation detail and constraint context (`mandatory_technologies`, `architecture_decisions`) is missing so it cannot be determined whether it is a valid constraint or premature design.
+      not_applicable_conditions:
+        - Non-normative explanatory notes.
+      evidence_expectations:
+        - Requirement excerpt, declared artifact/requirement level, and reference to constraint context (or lack thereof).
+      scope_boundaries:
+        - Valid implementation constraints (e.g., mandatory encryption standard or partner protocol) must NOT be flagged as errors when typed as constraints or backed by project context.
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-05, GTC-01, GTC-05]
+
+  - criterion_id: RQ-03
+    statement: "Unambiguous — The requirement is stated such that it admits only one reasonably clear interpretation within its defined context and glossary."
+    rationale: "Ambiguous wording, unanchored pronouns, unbounded qualitative adjectives, or ambiguous logical combinators lead diverging stakeholders, developers, and testers to build and test different behaviors."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Unambiguous)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Ambiguity & Editorial Checklist)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Unambiguous; Linguistic Rules" }
+    synthesis_note: |
+      name: Unambiguous
+      evaluation_objective: Determine whether the requirement has one reasonably clear interpretation.
+      pass_conditions:
+        - Terms, actors, conditions, logical operators, and references have a single clear meaning in the statement or via accompanying glossary/context.
+      issue_conditions:
+        - The statement contains syntactic ambiguity, unanchored pronouns with multiple plausible antecedents, ambiguous combinators (e.g., `and/or`), or subjective/vague qualitative terms that are not bounded by the requirement or glossary.
+      required_context:
+        - Original requirement statement.
+      optional_context:
+        - Project glossary, surrounding section context, Language Pack for the requirement's natural language (`en`, `vi`, etc.).
+      standalone_assessable_when:
+        - Directly assessable from the statement alone for structural, syntactic, referential, and unbounded vague-expression ambiguity.
+      not_assessable_conditions:
+        - Statement text is corrupted/unreadable, or interpretation hinges entirely on specialized domain acronyms/terms defined in an external glossary that was not supplied.
+      not_applicable_conditions:
+        - Never Not Applicable for a normative requirement statement.
+      evidence_expectations:
+        - Exact ambiguous phrase/construct in the requirement text and explanation of the competing interpretations.
+      scope_boundaries:
+        - Language Pack matches are heuristic signals only; if context or parenthetical bounds resolve the meaning, status is `Compliant`.
+    validation:
+      status: unvalidated
+      examples: [EX-02, EX-03, EX-11, EX-12, EX-13, GTC-02, GTC-03, GTC-11, GTC-12, GTC-13]
+
+  - criterion_id: RQ-04
+    statement: "Complete — The requirement contains sufficient information (or valid, resolved references) to understand the intended capability, behavior, condition, or constraint at its abstraction level."
+    rationale: "Incomplete requirements (missing actor/subject, missing trigger/condition, missing system response, or TBD/dangling references) force developers to guess behavior during implementation."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Completeness & TBD Checks)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Complete" }
+    synthesis_note: |
+      name: Complete
+      evaluation_objective: Determine whether sufficient information is provided to understand the intended requirement at its level.
+      pass_conditions:
+        - All semantic elements necessary for the requirement type and level (e.g., subject/system, trigger/precondition when event/state-driven, required action/outcome, and applicable bounds/error behavior) are stated or linked via resolved references.
+      issue_conditions:
+        - Placeholders (`TBD`, `TBC`, `TODO`, `...`), open-ended list tails (`etc.`, `v.v.`, `and so on`), passive voice hiding a non-obvious actor, missing outcome/condition for conditional behavior, or broken internal reference.
+      required_context:
+        - Original requirement statement and requirement type (or representation format).
+      optional_context:
+        - Referenced sections, tables, interface definitions, or state models within the scope.
+      standalone_assessable_when:
+        - Directly assessable when placeholders, open-ended tails, missing actor, or missing conditional outcomes occur in the statement itself.
+      not_assessable_conditions:
+        - The statement delegates parameters or structures to a specific external document/table (e.g., "validate fields per Table 4-2") that is outside the provided review scope.
+      not_applicable_conditions:
+        - Never Not Applicable for a normative requirement statement.
+      evidence_expectations:
+        - Exact requirement excerpt and identification of the missing semantic slot, placeholder, or unresolved reference.
+      scope_boundaries:
+        - Evaluates completeness of the *individual requirement*; missing requirements across an entire feature or SRS belong to `re.srs-review`.
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-07, EX-08, GTC-01, GTC-07, GTC-08]
+
+  - criterion_id: RQ-05
+    statement: "Singular — The requirement states a single independent obligation, capability, characteristic, or constraint rather than bundling multiple unrelated obligations."
+    rationale: "Compound requirements that bundle independent obligations obscure traceability, complicate atomic verification (partial pass/fail), and create maintenance ambiguity."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Singular)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Compound Requirements)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Singular; Combinator Rules" }
+    synthesis_note: |
+      name: Singular
+      evaluation_objective: Determine whether the requirement expresses one independent obligation or capability.
+      pass_conditions:
+        - The statement expresses a single atomic capability, constraint, or state transition (even if its trigger condition or output record contains a cohesive list of fields).
+      issue_conditions:
+        - Multiple independent obligations, distinct actors, unrelated system functions, or separate lifecycle/operational concerns are conjoined into one requirement item.
+      required_context:
+        - Original requirement statement.
+      optional_context:
+        - Artifact structure (e.g., whether the item is an atomic requirement or a declared section header).
+      standalone_assessable_when:
+        - Almost always assessable directly from the requirement statement structure.
+      not_assessable_conditions:
+        - Statement is truncated or unparseable.
+      not_applicable_conditions:
+        - Section/epic grouping headers that are explicitly metadata containers for child requirements rather than requirement statements themselves (see EX-15 / GTC-15).
+      evidence_expectations:
+        - Exact excerpt highlighting the distinct, independent obligations bundled within the single item.
+      scope_boundaries:
+        - Do NOT flag conjunctions (`and`, `và`) that merely join coupled conditions of a single trigger or attributes of a single atomic payload.
+    validation:
+      status: unvalidated
+      examples: [EX-04, EX-06, EX-15, GTC-04, GTC-06, GTC-15]
+
+  - criterion_id: RQ-06
+    statement: "Feasible — The requirement appears achievable within the supplied technical, operational, environmental, and project constraints."
+    rationale: "Requirements that conflict with known physical laws, technical limits, mandatory infrastructure, or project constraints cause downstream design failure or costly rework."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Feasible)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Feasibility within Constraints)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Feasible" }
+    synthesis_note: |
+      name: Feasible
+      evaluation_objective: Determine whether the individual requirement appears achievable within the supplied constraints.
+      pass_conditions:
+        - Supplied technical, environmental, and project constraints are present and the requirement is consistent with them (or is a standard deterministic capability compatible with the declared environment).
+      issue_conditions:
+        - The requirement directly violates supplied technical/operational/resource constraints, OR is internally self-contradictory / impossible (e.g., zero-millisecond latency over WAN, 100% uptime with single non-redundant node).
+      required_context:
+        - Technical constraints, environment, infrastructure, known limitations, or resource constraints (`project-context.yaml`).
+      optional_context:
+        - Verified vendor specifications, user benchmarks, mandatory technologies.
+      standalone_assessable_when:
+        - Only when the requirement statement is logically self-contradictory or violates fundamental physical/mathematical principles.
+      not_assessable_conditions:
+        - Relevant technical, environmental, or project constraints are missing (`status: missing`) and the statement is not self-contradictory.
+      not_applicable_conditions:
+        - Pure definitional or axiomatic business-policy classifications that impose no realization constraint beyond nomenclature.
+      evidence_expectations:
+        - Requirement excerpt plus explicit reference to the violated constraint or internal contradiction.
+      scope_boundaries:
+        - Evaluates statement-level feasibility against supplied constraints; full system-level architecture/budget/timeline feasibility belongs to `fr.technical-feasibility` (`feasibility-risk` capability).
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-09, EX-14, GTC-01, GTC-09, GTC-14]
+
+  - criterion_id: RQ-07
+    statement: "Verifiable — The requirement is structured and worded such that its realization can be objectively verified by test, demonstration, analysis, or inspection."
+    rationale: "If compliance with a requirement cannot be objectively determined by a finite, repeatable method, acceptance testing and quality assurance cannot prove the requirement is met."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Verifiable)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Verification & Validation Checks)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Verifiable" }
+    synthesis_note: |
+      name: Verifiable
+      evaluation_objective: Determine whether compliance can be objectively verified.
+      pass_conditions:
+        - The requirement specifies observable deterministic behavior, state transitions, structural constraints, or bounded quantitative criteria that can be verified via test, demonstration, analysis, or inspection (either in the statement or via linked acceptance criteria).
+      issue_conditions:
+        - The requirement states subjective impressions ("intuitive", "modern look", "thân thiện"), unbounded absolutes ("never fail under any circumstance"), or non-functional qualities ("fast response", "high throughput") without any verifiable acceptance criterion or threshold.
+      required_context:
+        - Original requirement statement and requirement type.
+      optional_context:
+        - Linked acceptance criteria, verification method attribute, measurement conditions/environment.
+      standalone_assessable_when:
+        - Directly assessable when the statement itself defines observable deterministic behavior/bounds, or when it uses purely subjective/unbounded claims with no external acceptance criteria reference.
+      not_assessable_conditions:
+        - The requirement references an external acceptance criteria set or test specification that exists in the project but was not supplied in the review scope.
+      not_applicable_conditions:
+        - Non-normative headings or pure contextual descriptions.
+      evidence_expectations:
+        - Exact requirement excerpt and explanation of why objective verification is or is not possible.
+      scope_boundaries:
+        - Do NOT require numerical metrics when behavioral, state-transition, or inspection verification is objective and sufficient (see EX-06 / GTC-06). Detailed test case authoring belongs to `qa.test-design`.
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-03, EX-06, EX-10, GTC-01, GTC-03, GTC-06, GTC-10]
+
+  - criterion_id: RQ-08
+    statement: "Correct — The requirement accurately represents the authoritative source, parent requirement, regulatory rule, or stakeholder intent from which it was derived."
+    rationale: "A well-written, unambiguous, and verifiable requirement is still defective if it misstates the business rule, formula, threshold, or stakeholder need it is supposed to implement."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: critical
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Correct)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Accuracy against Parent/Source Need)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Correct" }
+    synthesis_note: |
+      name: Correct
+      evaluation_objective: Determine whether the requirement accurately represents its authoritative source or intended need.
+      pass_conditions:
+        - The requirement statement accurately preserves the conditions, thresholds, actors, and semantics of the supplied authoritative source, parent requirement, or business rule.
+      issue_conditions:
+        - The requirement contradicts, distorts, or inverts the supplied authoritative source/parent requirement, OR contains an internal mathematical/logical contradiction.
+      required_context:
+        - Authoritative source, parent requirement, regulation, or documented stakeholder intent.
+      optional_context:
+        - Domain rules, business objectives.
+      standalone_assessable_when:
+        - Only when the statement contains an internal mathematical or logical contradiction (e.g., "discount applies when order total > 100 and order total < 50"); otherwise requires authoritative source context.
+      not_assessable_conditions:
+        - No authoritative source, parent requirement, or documented stakeholder intent is provided, and the statement is internally consistent.
+      not_applicable_conditions:
+        - Top-level axiomatic business rules where the statement itself is declared as the primary authoritative source and has no parent source.
+      evidence_expectations:
+        - Excerpt from the requirement and excerpt/locator from the authoritative source showing alignment or discrepancy.
+      scope_boundaries:
+        - Evaluates accuracy of the individual requirement against its source; horizontal conflicts across sibling requirements belong to `fr.requirement-conflict-analysis`.
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-09, EX-14, GTC-01, GTC-09, GTC-14]
+
+  - criterion_id: RQ-09
+    statement: "Conforming — The requirement adheres to applicable project, organizational, and artifact conventions (such as approved templates, identifier formats, mandatory attributes, and glossary terms)."
+    rationale: "Consistent adherence to project-defined conventions and glossary reduces cognitive load, supports automated tooling, and prevents terminology drift."
+    applies_to: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Conforming)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Conforming; Pattern & Glossary Adherence" }
+    synthesis_note: |
+      name: Conforming
+      evaluation_objective: Determine whether the requirement follows applicable project, organizational, and documentation conventions.
+      pass_conditions:
+        - The requirement follows the supplied project conventions (ID pattern, chosen syntax such as EARS/User Story/shall-template, mandatory metadata attributes, and approved glossary terms).
+      issue_conditions:
+        - The requirement violates an explicit convention declared by the project or artifact preamble (e.g., missing mandatory `priority` attribute, using a deprecated synonym prohibited by the project glossary, or violating a declared EARS/User Story syntax rule).
+      required_context:
+        - Applicable project conventions, template rules, attribute schema, or glossary rules (from Project Context, config, or artifact preamble).
+      optional_context:
+        - Language Pack convention notes when enabled by the project.
+      standalone_assessable_when:
+        - Only when the artifact itself explicitly declares its formatting/template convention or when a well-known structured representation (e.g., declared User Story or EARS item) violates its own declared structural skeleton.
+      not_assessable_conditions:
+        - No project conventions, style guide, glossary, or artifact template rules are supplied.
+      not_applicable_conditions:
+        - Informal/exploratory inputs where the project explicitly marks formatting conventions as `not-applicable`.
+      evidence_expectations:
+        - Requirement excerpt and reference to the specific project/artifact convention rule violated.
+      scope_boundaries:
+        - Do NOT enforce `shall` or any single template unless the project's own convention mandates it.
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-07, EX-08, EX-09, GTC-01, GTC-07, GTC-08, GTC-09]

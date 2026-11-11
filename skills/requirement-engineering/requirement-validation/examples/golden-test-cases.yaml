@@ -1,0 +1,288 @@
+# Golden Test Cases for `re.requirement-validation`
+# Covers positive, negative, missing-baseline Not Assessable gates, false-positive prevention, and cross-skill ownership boundary cases.
+
+suite_id: re.requirement-validation.golden-suite
+skill_id: re.requirement-validation
+skill_version: 0.1.0
+status_enum: [Compliant, Issue, Not Assessable, Not Applicable]
+
+test_cases:
+  - test_id: RVAL-GTC-01
+    scenario: "1. Unaddressed Stakeholder Need and partially satisfied multi-part Stakeholder Need (RVAL-01)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      stakeholder_needs:
+        - { need_id: SN-01, priority: must-have, text: "Warehouse supervisors need real-time dashboard monitoring of freezer temperatures AND automated SMS alerts within 60 seconds whenever any freezer exceeds -15C." }
+        - { need_id: SN-02, priority: must-have, text: "Quality auditors need to export monthly temperature compliance certificates signed digitally for regulatory inspections." }
+      business_objectives: null
+      authoritative_policies: null
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-MON-01, priority: high, text: "The Monitoring Dashboard shall display the current temperature of each freezer unit refreshed every 30 seconds and highlight readings above -15C in red." }
+    expected_criterion_statuses:
+      RVAL-01: Issue
+      RVAL-02: Compliant
+      RVAL-03: Not Assessable
+      RVAL-04: Not Assessable
+      RVAL-05: Compliant
+      RVAL-06: Not Assessable
+    expected_findings:
+      - criterion_id: RVAL-01
+        rule_ids: [RVAL-R001, RVAL-R002]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "SN-02 (export signed monthly compliance certificates) has 0 addressing requirements in the full set (RVAL-R001); SN-01 is only partially addressed by REQ-MON-01 because automated SMS alerting within 60s of exceeding -15C is omitted (RVAL-R002)."
+    explanation: "Tests both complete omission of a stakeholder need (RVAL-R001) and partial coverage of a multi-part need (RVAL-R002)."
+
+  - test_id: RVAL-GTC-02
+    scenario: "2. Stakeholder intent distortion and priority inversion in Vietnamese BRD-to-SRS validation (RVAL-02)"
+    language: vi
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      stakeholder_needs:
+        - { need_id: NEED-01, priority: must-have, text: "Khách hàng doanh nghiệp cần tự tải xuống Hóa đơn GTGT điện tử ngay lập tức trên Cổng thông tin tự phục vụ sau khi thanh toán thành công." }
+      business_objectives: null
+      authoritative_policies: null
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-INV-05, priority: optional, text: "Sau khi thanh toán thành công, hệ thống phải cho phép khách hàng gửi yêu cầu cấp hóa đơn để Kế toán viên duyệt thủ công và gửi qua email trong vòng 3 ngày làm việc." }
+    expected_criterion_statuses:
+      RVAL-01: Compliant
+      RVAL-02: Issue
+      RVAL-03: Not Assessable
+      RVAL-04: Not Assessable
+      RVAL-05: Compliant
+      RVAL-06: Not Assessable
+    expected_findings:
+      - criterion_id: RVAL-02
+        rule_ids: [RVAL-R003, RVAL-R004]
+        type: conflict
+        severity: major
+        confidence: high
+        evidence_excerpt: "REQ-INV-05 distorts NEED-01 by replacing immediate self-service portal download with a 3-business-day manual accounting approval workflow (RVAL-R003) and downgrades a must-have need to optional priority (RVAL-R004)."
+    explanation: "Tests semantic intent distortion (RVAL-R003) and priority inversion (RVAL-R004) in Vietnamese."
+
+  - test_id: RVAL-GTC-03
+    scenario: "3. Requirement workflow directly undermines declared Business Objective KPI and second Business Objective is unoperationalized (RVAL-03)"
+    language: en
+    artifact_type: prd
+    input_context:
+      completeness_mode: full
+      stakeholder_needs: null
+      business_objectives:
+        - { obj_id: BO-01, text: "Achieve >= 90% straight-through automated approval for micro-loans under $500 with end-to-end decision latency under 2 minutes." }
+        - { obj_id: BO-02, text: "Reduce borrower repayment default rate by 25% through automated proactive repayment reminders." }
+      authoritative_policies: null
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-LOAN-01, text: "Every loan application regardless of requested principal amount shall be placed in the Credit Officer Manual Review Queue and require manual sign-off before approval." }
+    expected_criterion_statuses:
+      RVAL-01: Not Assessable
+      RVAL-02: Not Assessable
+      RVAL-03: Issue
+      RVAL-04: Not Assessable
+      RVAL-05: Compliant
+      RVAL-06: Not Assessable
+    expected_findings:
+      - criterion_id: RVAL-03
+        rule_ids: [RVAL-R005, RVAL-R006]
+        type: conflict
+        severity: critical
+        confidence: high
+        evidence_excerpt: "REQ-LOAN-01 mandates 100% manual review for all loan amounts, reducing straight-through automated approval for <$500 loans to 0% and directly conflicting with BO-01 (RVAL-R005); BO-02 (proactive repayment reminders) has 0 supporting requirements in the full set (RVAL-R006)."
+    explanation: "Tests KPI/objective conflict (RVAL-R005) and unoperationalized business goal detection (RVAL-R006)."
+
+  - test_id: RVAL-GTC-04
+    scenario: "4. Requirement violates authoritative corporate segregation-of-duties and data retention policies (RVAL-04)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      stakeholder_needs: null
+      business_objectives: null
+      authoritative_policies:
+        - { policy_id: POL-FIN-02, text: "Segregation of Duties Policy: No user role may both create a vendor disbursement request and approve that same disbursement request." }
+        - { policy_id: POL-SEC-09, text: "Financial Audit Retention Policy: All disbursement audit records must be retained immutable for a minimum of 7 years." }
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-PAY-12, text: "When a Finance Manager creates a vendor disbursement request under $10,000, the Finance Manager shall be permitted to self-approve the request immediately." }
+        - { req_id: REQ-PAY-19, text: "The system shall purge all disbursement audit records older than 90 days to conserve database storage." }
+    expected_criterion_statuses:
+      RVAL-01: Not Assessable
+      RVAL-02: Not Assessable
+      RVAL-03: Not Assessable
+      RVAL-04: Issue
+      RVAL-05: Not Assessable
+      RVAL-06: Not Assessable
+    expected_findings:
+      - criterion_id: RVAL-04
+        rule_ids: [RVAL-R007]
+        type: conflict
+        severity: critical
+        confidence: high
+        evidence_excerpt: "REQ-PAY-12 permits self-approval of disbursement requests in violation of POL-FIN-02 (Segregation of Duties); REQ-PAY-19 purges disbursement audit records after 90 days in violation of POL-SEC-09 (7-year minimum retention)."
+    explanation: "Tests RVAL-04 / RVAL-R007 compliance checking against authoritative policies."
+
+  - test_id: RVAL-GTC-05
+    scenario: "5. Unjustified gold-plating feature with no basis in stakeholder needs, business objectives, or policies (RVAL-05)"
+    language: en
+    artifact_type: prd
+    input_context:
+      completeness_mode: full
+      stakeholder_needs:
+        - { need_id: SN-10, text: "Clinic receptionists need to register new patients and schedule outpatient appointments." }
+      business_objectives:
+        - { obj_id: BO-10, text: "Reduce patient check-in wait time at clinic reception below 3 minutes." }
+      authoritative_policies:
+        - { policy_id: POL-HIPAA-01, text: "All patient health records must be access-controlled and encrypted at rest." }
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-CLN-01, text: "The Reception Portal shall allow receptionists to register a new patient profile and book an available appointment slot within 60 seconds." }
+        - { req_id: REQ-CLN-02, text: "The Reception Portal shall include a built-in cryptocurrency wallet and NFT badge marketplace for clinic receptionists." }
+    expected_criterion_statuses:
+      RVAL-01: Compliant
+      RVAL-02: Compliant
+      RVAL-03: Compliant
+      RVAL-04: Compliant
+      RVAL-05: Issue
+      RVAL-06: Not Assessable
+    expected_findings:
+      - criterion_id: RVAL-05
+        rule_ids: [RVAL-R008]
+        type: defect
+        severity: minor
+        confidence: high
+        evidence_excerpt: "REQ-CLN-02 introduces a cryptocurrency wallet and NFT marketplace with zero justification in SN-10, BO-10, POL-HIPAA-01, or system enablement (gold-plating)."
+    explanation: "Tests RVAL-05 / RVAL-R008 detection of unjustified gold-plating requirements."
+
+  - test_id: RVAL-GTC-06
+    scenario: "6. Missing upstream validation baseline safeguard — All RVAL criteria marked Not Assessable when only SRS requirements are supplied"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      stakeholder_needs: null
+      business_objectives: null
+      authoritative_policies: null
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-INV-01, text: "The Inventory Service shall decrement available stock count when an order is confirmed." }
+    expected_criterion_statuses:
+      RVAL-01: Not Assessable
+      RVAL-02: Not Assessable
+      RVAL-03: Not Assessable
+      RVAL-04: Not Assessable
+      RVAL-05: Not Assessable
+      RVAL-06: Not Assessable
+    expected_findings: []
+    explanation: "When no stakeholder needs, business objectives, authoritative policies, or operational scenarios are provided, re.requirement-validation must mark RVAL-01..06 as Not Assessable rather than hallucinating upstream intent."
+
+  - test_id: RVAL-GTC-07
+    scenario: "7. False-positive prevention — Essential security and audit enabling requirements are NOT flagged as gold-plating (Compliant)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      stakeholder_needs:
+        - { need_id: SN-20, text: "HR Managers need to update employee salary grades in the HR Portal." }
+      business_objectives:
+        - { obj_id: BO-20, text: "Digitize HR compensation updates with full accountability." }
+      authoritative_policies: []
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-HR-01, text: "The HR Portal shall allow authenticated users with the HR_MANAGER role to update an employee's salary grade." }
+        - { req_id: REQ-HR-02, text: "When an employee's salary grade is updated, the HR Portal shall record an immutable audit entry with actor_id, employee_id, old_grade, new_grade, and UTC timestamp." }
+    expected_criterion_statuses:
+      RVAL-01: Compliant
+      RVAL-02: Compliant
+      RVAL-03: Compliant
+      RVAL-04: Not Assessable
+      RVAL-05: Compliant
+      RVAL-06: Not Assessable
+    expected_findings: []
+    explanation: "REQ-HR-02 (audit logging of salary changes) is an essential operational/accountability enabling requirement supporting BO-20 and SN-20, not gold-plating."
+
+  - test_id: RVAL-GTC-08
+    scenario: "8. Operational Concept (ConOps) mismatch — Requirement mandates continuous internet sync for an offline subterranean inspection scenario (RVAL-06)"
+    language: en
+    artifact_type: system-requirement-spec
+    input_context:
+      completeness_mode: full
+      stakeholder_needs: null
+      business_objectives: null
+      authoritative_policies: null
+      operational_scenarios:
+        - { scenario_id: CONOPS-01, text: "Field engineers perform structural safety inspections inside subterranean utility tunnels where cellular and Wi-Fi connectivity are completely unavailable for 4 to 6 hours at a time, recording defects on ruggedized tablets and syncing upon returning to the surface depot." }
+      requirements_set:
+        - { req_id: REQ-INSP-04, text: "When a field engineer enters a defect observation on the tablet, the Inspection App shall synchronously validate and commit the observation to the central cloud API within 3 seconds or block the engineer from proceeding to the next checklist item." }
+    expected_criterion_statuses:
+      RVAL-01: Not Assessable
+      RVAL-02: Not Assessable
+      RVAL-03: Not Assessable
+      RVAL-04: Not Assessable
+      RVAL-05: Not Assessable
+      RVAL-06: Issue
+    expected_findings:
+      - criterion_id: RVAL-06
+        rule_ids: [RVAL-R009]
+        type: conflict
+        severity: critical
+        confidence: high
+        evidence_excerpt: "REQ-INSP-04 mandates synchronous cloud API commit within 3s and blocks checklist progression on failure, which renders the tablet unusable in the 4-6 hour zero-connectivity subterranean tunnel environment defined in CONOPS-01."
+    explanation: "Tests RVAL-06 / RVAL-R009 operational scenario and environmental validity."
+
+  - test_id: RVAL-GTC-09
+    scenario: "9. Operational scenario acceptance criteria validate only technical HTTP status codes while omitting the business outcome (RVAL-06)"
+    language: en
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      stakeholder_needs: null
+      business_objectives: null
+      authoritative_policies: null
+      operational_scenarios:
+        - { scenario_id: JOURNEY-CLAIM-01, text: "When an insured driver submits a windshield damage claim with photos, the driver receives an instant repair voucher and booked glass shop appointment." }
+      requirements_set:
+        - { req_id: US-CLAIM-01, text: "As an insured driver, I want to submit a windshield damage claim with photos. Acceptance Criteria: AC-1: POST /api/v1/claims returns HTTP 200 OK with a JSON payload containing claim_uuid." }
+    expected_criterion_statuses:
+      RVAL-01: Not Assessable
+      RVAL-02: Not Assessable
+      RVAL-03: Not Assessable
+      RVAL-04: Not Assessable
+      RVAL-05: Not Assessable
+      RVAL-06: Issue
+    expected_findings:
+      - criterion_id: RVAL-06
+        rule_ids: [RVAL-R009, RVAL-R010]
+        type: gap
+        severity: minor
+        confidence: high
+        evidence_excerpt: "US-CLAIM-01 Acceptance Criteria only verify that POST /api/v1/claims returns HTTP 200 with claim_uuid, omitting the stakeholder-visible operational outcomes in JOURNEY-CLAIM-01 (instant repair voucher issuance and glass shop appointment booking)."
+    explanation: "Tests RVAL-06 / RVAL-R010 stakeholder acceptance outcome validation."
+
+  - test_id: RVAL-GTC-10
+    scenario: "10. Strict ownership boundary — Missing trace link ID attribute when semantic need is completely satisfied belongs to re.requirement-traceability, NOT re.requirement-validation"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      stakeholder_needs:
+        - { need_id: SN-50, priority: must-have, text: "Patients need to reschedule confirmed appointments up to 12 hours before the appointment start time." }
+      business_objectives: null
+      authoritative_policies: null
+      operational_scenarios: null
+      requirements_set:
+        - { req_id: REQ-APT-10, priority: high, trace_to_need: null, text: "The Patient Portal shall allow a patient to reschedule a confirmed appointment to another available slot provided the request is submitted at least 12 hours prior to the scheduled appointment start time." }
+    expected_criterion_statuses:
+      RVAL-01: Compliant
+      RVAL-02: Compliant
+      RVAL-03: Not Assessable
+      RVAL-04: Not Assessable
+      RVAL-05: Compliant
+      RVAL-06: Not Assessable
+    expected_findings: []
+    explanation: "Semantically, REQ-APT-10 completely and faithfully satisfies SN-50 (so RVAL-01, RVAL-02, RVAL-05 pass). The missing trace_to_need ID attribute is a structural link defect owned exclusively by re.requirement-traceability (RTR-01)."

@@ -1,0 +1,468 @@
+# Detection and evaluation rules for Skill `re.requirement-quality`
+# Schema: schemas/definitions/analysis-rule.schema.json (strictly validated; additionalProperties: false)
+# Defines HOW the Agent detects and evaluates potential issues for RQ-01 .. RQ-09.
+# Extended rule metadata (criterion_id, source_type, normative_level, detection_approach, applicable_languages,
+# evidence_expectations, false_positive_considerations, exceptions) is structured inside `method`.
+# Note: In schema `authority_level`, `industry-best-practice` represents Industry Guidance (NASA/INCOSE).
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-quality
+  owner_version: 0.1.0
+
+rules:
+  - rule_id: RQ-R001
+    rule_type: comparison
+    statement: "Verify requirement necessity against supplied need justification, parent requirement, or scope boundaries."
+    inputs: [requirement-statement, project-context, parent-requirement, rationale]
+    method: |
+      criterion_id: RQ-01
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check whether `rationale`, `parent_requirement`, `stakeholder_need`, or `business_objectives` / `functional_scope` is supplied."
+        - "2. If none is supplied and the statement does not self-declare obsolescence, return status `Not Assessable`."
+        - "3. If supplied, check whether the requirement traces to a valid need or conflicts with explicit scope exclusions."
+      evidence_expectations: "Cite both the requirement excerpt and the justifying need/parent or conflicting scope exclusion."
+      false_positive_considerations: "Missing rationale or missing parent link must yield `Not Assessable`, NEVER an automatic `confirmed-issue` claiming the requirement is unnecessary."
+      exceptions: "Regulatory/compliance constraints are justified by the cited regulation even without a user-facing feature goal."
+    rationale: "Ensures `RQ-01` (Necessary) is grounded in explicit need evidence rather than speculation."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Necessary)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Requirement Rationale)" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-09, GTC-01, GTC-09]
+
+  - rule_id: RQ-R002
+    rule_type: analysis
+    statement: "Detect premature implementation or design details that are inappropriate for the declared requirement abstraction level."
+    inputs: [requirement-statement, artifact-metadata, project-context]
+    method: |
+      criterion_id: RQ-02
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Identify the requirement's declared level (business, stakeholder, user, system, software, interface, or constraint)."
+        - "2. Check whether the statement mandates internal implementation mechanics (e.g., specific SQL column types, internal class/method names, or low-level algorithm choices) below its abstraction level."
+        - "3. Check `project-context` (`mandatory_technologies`, `architecture_decisions`, `technical_constraints`) and `requirement_type` to see if the technical detail is a legitimate externally imposed or architectural constraint."
+        - "4. If constraint context is missing and level appropriateness depends on it, return `Not Assessable` or `potential-issue` (`needs-clarification`), not `confirmed-issue`."
+      evidence_expectations: "Quote the implementation-specific phrase, state the artifact/requirement level, and cite the presence or absence of constraint justification."
+      false_positive_considerations: "Do NOT flag valid implementation constraints (e.g., mandatory TLS version, regulatory encryption algorithm, mandated partner protocol) when typed as a constraint or backed by ADR/project context."
+      exceptions: "Interface specifications (`api-spec`, `interface-spec`) and explicit Constraint items legitimately specify protocols, formats, and data schemas."
+    rationale: "Distinguishes premature design bias from legitimate technical constraints under `RQ-02` (Appropriate)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Appropriate)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Design vs Requirement)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Abstraction Level)" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-05, GTC-05]
+
+  - rule_id: RQ-R003
+    rule_type: analysis
+    statement: "Detect unbounded vague qualitative adjectives, adverbs, and imprecise quantifiers using Language Pack signals and contextual evaluation."
+    inputs: [requirement-statement, language-pack, glossary]
+    method: |
+      criterion_id: RQ-03
+      source_type: Industry Guidance
+      normative_level: Heuristic
+      detection_approach: Deterministic pattern detection
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Scan the requirement statement using the active Language Pack's `vague_qualitative_terms` and `imprecise_quantifiers` signal lists."
+        - "2. If a signal term is matched, inspect the surrounding clause, parenthetical metrics, linked acceptance criteria, and project glossary."
+        - "3. If the term is explicitly bounded in context (e.g., 'fast response (p95 <= 300 ms)' or defined in the glossary), discard the signal (`Compliant`)."
+        - "4. If the term remains unbounded and admits multiple interpretations, report `Issue` under `RQ-03` (and `RQ-07` if it prevents verification)."
+      evidence_expectations: "Quote the exact signal term and the full requirement clause showing the absence of a disambiguating bound or definition."
+      false_positive_considerations: "A keyword match alone NEVER creates a Finding. Domain-standard compound nouns (e.g., 'fast-forward button', 'optimal-path algorithm name') or terms accompanied by explicit acceptance thresholds are not defects."
+      exceptions: "High-level vision statements in a User Story `so that <benefit>` clause may use qualitative goal phrasing provided the capability/acceptance criteria are unambiguous."
+    rationale: "Unbounded qualitative terms are a primary source of interpretive divergence (`RQ-03`)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Unambiguous)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Ambiguous Terms)" }
+      - { source_id: SRC-0004, locator: "Writing Rules Summary — Vague Terms" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-03, EX-11, EX-12, EX-13, GTC-03, GTC-11, GTC-12, GTC-13]
+
+  - rule_id: RQ-R004
+    rule_type: analysis
+    statement: "Detect referential ambiguity from pronouns, demonstrative references, or scope modifiers with multiple plausible antecedents."
+    inputs: [requirement-statement, language-pack]
+    method: |
+      criterion_id: RQ-03
+      source_type: Industry Guidance
+      normative_level: Heuristic
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check pronouns and demonstrative terms flagged by the Language Pack (`pronoun_ambiguity_patterns`, e.g., `it`, `they`, `this`, `that`, `nó`, `họ`, `điều này`, `hệ thống đó`)."
+        - "2. Identify all candidate noun phrases preceding the pronoun in the sentence or parent clause."
+        - "3. Report `Issue` (`RQ-03`) only when two or more candidate antecedents are grammatically and semantically plausible."
+      evidence_expectations: "Quote the sentence, highlight the pronoun/demonstrative, and list the competing candidate antecedents."
+      false_positive_considerations: "Do NOT flag a pronoun when only one singular subject exists in the clause and its referent is unmistakable."
+      exceptions: "None."
+    rationale: "Referential ambiguity causes misattribution of actor, object, or state condition (`RQ-03`)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (Pronoun Ambiguity)" }
+      - { source_id: SRC-0004, locator: "Writing Rules Summary — Pronouns" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-02, GTC-02]
+
+  - rule_id: RQ-R005
+    rule_type: analysis
+    statement: "Detect ambiguous logical combinators and attachment scope (such as `and/or`, `/`, or unbracketed `A and B or C`)."
+    inputs: [requirement-statement, language-pack]
+    method: |
+      criterion_id: RQ-03
+      source_type: Industry Guidance
+      normative_level: Recommended
+      detection_approach: Structural validation
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check for ambiguous combinators (`and/or`, `và/hoặc`, slash `/` between actions or conditions) and mixed conjunction-disjunction chains (`A and B or C` / `A và B hoặc C`) without explicit grouping."
+        - "2. Evaluate whether the boolean truth table of the condition or obligation has more than one plausible reading."
+        - "3. If multiple boolean readings exist, report `Issue` under `RQ-03`."
+      evidence_expectations: "Quote the compound logical expression and show the two competing boolean groupings: `(A and B) or C` vs `A and (B or C)`."
+      false_positive_considerations: "Do NOT flag `/` when used in standard technical tokens (`HTTP/2`, `TCP/IP`, `CI/CD`, units `km/h`, `req/s`, date formats, or file paths)."
+      exceptions: "Standard technical abbreviations and units."
+    rationale: "Ambiguous boolean combinators create divergent implementation logic and test cases (`RQ-03`)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (And/Or Ambiguity)" }
+      - { source_id: SRC-0004, locator: "Writing Rules Summary — Combinators" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-02, GTC-02]
+
+  - rule_id: RQ-R006
+    rule_type: analysis
+    statement: "Detect escape clauses and optionality loopholes that make obligation conditions undefined."
+    inputs: [requirement-statement, language-pack]
+    method: |
+      criterion_id: RQ-03
+      source_type: Industry Guidance
+      normative_level: Heuristic
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check for escape clauses from the Language Pack (e.g., `if possible`, `when appropriate`, `as required`, `where practical`, `nếu có thể`, `khi cần thiết`, `tùy trường hợp`)."
+        - "2. Determine whether the condition is explicitly defined elsewhere in the statement (e.g., 'when required by the tenant's configured retention policy')."
+        - "3. If the trigger condition remains undefined, report `Issue` under `RQ-03` and/or `RQ-04`."
+      evidence_expectations: "Quote the escape clause and note the missing trigger condition."
+      false_positive_considerations: "If the phrase is immediately qualified by an explicit deterministic rule or configuration parameter, it is not an escape clause."
+      exceptions: "None."
+    rationale: "Unbounded escape clauses render compliance subjective and un-testable (`RQ-03`, `RQ-04`, `RQ-07`)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (Escape Clauses)" }
+      - { source_id: SRC-0004, locator: "Writing Rules Summary — Escape Clauses" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-03, EX-11, GTC-03, GTC-11]
+
+  - rule_id: RQ-R007
+    rule_type: analysis
+    statement: "Validate structural completeness of required semantic slots (subject/actor, trigger/condition when applicable, action/behavior, and object/outcome) for the requirement's representation and type."
+    inputs: [requirement-statement, artifact-metadata]
+    method: |
+      criterion_id: RQ-04
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Structural validation
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Identify the requirement representation (prose statement, EARS, User Story, table row, interface rule, business rule)."
+        - "2. Verify that the responsible subject/system/actor is identifiable (flag agentless passive voice ONLY when the responsible system/actor cannot be determined from the sentence or section context)."
+        - "3. Verify that the required action/capability/constraint and its target/outcome are stated."
+        - "4. For conditional/event-driven requirements, verify that both trigger/condition and system response are present."
+      evidence_expectations: "Quote the statement and specify which semantic slot (actor, trigger, action, outcome, or boundary condition) is missing."
+      false_positive_considerations: "In a tabular requirement list where a column header or parent section explicitly declares the actor/module, omitting the actor name inside each cell is acceptable if unambiguous."
+      exceptions: "Ubiquitous invariants and data constraints do not require an event trigger."
+    rationale: "Ensures each requirement states a complete behavioral or structural proposition (`RQ-04`)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Complete" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-07, EX-08, GTC-01, GTC-07, GTC-08]
+
+  - rule_id: RQ-R008
+    rule_type: analysis
+    statement: "Detect incomplete placeholders (`TBD`, `TBC`, `TODO`), open-ended list tails (`etc.`, `v.v.`), and unresolved internal references."
+    inputs: [requirement-statement, language-pack, referenced-artifacts]
+    method: |
+      criterion_id: RQ-04
+      source_type: Industry Guidance
+      normative_level: Mandatory
+      detection_approach: Deterministic pattern detection
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check for placeholders (`TBD`, `TBC`, `TODO`, `???`, `chưa xác định`, `sẽ bổ sung sau`) and open-ended list terminators (`etc.`, `and so on`, `including but not limited to`, `v.v.`, `và các trường khác`)."
+        - "2. If the statement references another section/table/artifact, check whether that target is supplied in scope (if supplied and broken -> report `Issue` under `RQ-04`; if outside the provided review scope -> return `Not Assessable` for `RQ-04` and record a clarification note)."
+      evidence_expectations: "Quote the placeholder, open-ended tail, or dangling reference."
+      false_positive_considerations: "Parenthetical examples (`e.g.`, `ví dụ`) that illustrate an already complete and exhaustively defined category are acceptable if the normative rule itself is closed."
+      exceptions: "Early-stage draft artifacts where `TBD` tracking is explicitly requested as `needs-clarification`."
+    rationale: "Placeholders and open-ended lists leave the scope of obligation incomplete (`RQ-04`)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete)" }
+      - { source_id: SRC-0002, locator: "Appendix C (TBD & Open-Ended Clauses)" }
+      - { source_id: SRC-0004, locator: "Writing Rules Summary — Open-Ended Lists & Placeholders" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-03, EX-11, GTC-03, GTC-11]
+
+  - rule_id: RQ-R009
+    rule_type: analysis
+    statement: "Detect multiple independent obligations, capabilities, or unrelated constraints bundled into a single requirement item."
+    inputs: [requirement-statement, language-pack]
+    method: |
+      criterion_id: RQ-05
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Structural validation
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Parse the predicate/obligation structure of the requirement statement."
+        - "2. Check whether the item conjoins two or more independent system capabilities, unrelated workflows, distinct actors' obligations, or separate functional + non-functional requirements that could be satisfied, tested, or changed independently."
+        - "3. Check whether multiple sentences in a single requirement cell/item introduce separate obligations rather than qualifying the primary obligation."
+        - "4. If independent obligations are bundled, report `Issue` under `RQ-05`."
+      evidence_expectations: "Quote the requirement and explicitly list the separate independent obligations that should be split."
+      false_positive_considerations: "Do NOT flag conjunctions (`and`, `và`) that join: (a) coupled conditions of a single trigger (`when X and Y occur`), (b) fields of a single atomic record/message (`log timestamp, user_id, and action_type`), or (c) two inseparable sides of one atomic transaction."
+      exceptions: "Container/section headings that are explicitly non-normative grouping labels (`Not Applicable`)."
+    rationale: "Enforces `RQ-05` (Singular) by separating true multi-obligation bundling from harmless grammatical conjunctions."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Singular)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Compound Requirements)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Singular" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-04, EX-06, EX-15, GTC-04, GTC-06, GTC-15]
+
+  - rule_id: RQ-R010
+    rule_type: analysis
+    statement: "Detect unclear requirement boundaries when multiple unnumbered or unsegmented requirement statements are merged in prose."
+    inputs: [requirement-statement, artifact-metadata]
+    method: |
+      criterion_id: RQ-05
+      source_type: Internal Convention
+      normative_level: Recommended
+      detection_approach: Structural validation
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, use-case, system-requirement-spec, business-rule-doc]
+      evaluation_steps:
+        - "1. Inspect prose blocks where multiple normative sentences appear without individual identifiers or clear atomic segmentation."
+        - "2. Report boundary ambiguity under `RQ-05` / `RQ-09` rather than silently inventing requirement boundaries."
+      evidence_expectations: "Quote the multi-statement prose block and note the absence of clear atomic requirement boundaries."
+      false_positive_considerations: "Explanatory rationale sentences clearly marked as non-normative context accompanying a single requirement are not boundary violations."
+      exceptions: "Artifacts where paragraph-level grouping is explicitly declared as the unit of specification."
+    rationale: "Prevents the Agent from inventing arbitrary requirement splits when artifact segmentation is ambiguous (Artifact Handling Principle 6 & 7)."
+    authority_level: internal-convention
+    source_refs: []
+    origin_note: "Skill_Review Artifact Handling Principles (Section 5, Rules 6 & 7 of re.requirement-quality specification)"
+    validation:
+      status: unvalidated
+      examples: [EX-04, GTC-04]
+
+  - rule_id: RQ-R011
+    rule_type: comparison
+    statement: "Evaluate requirement achievability against supplied technical, environmental, operational, and resource constraints."
+    inputs: [requirement-statement, project-context]
+    method: |
+      criterion_id: RQ-06
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check whether the requirement statement contains an internal logical/physical impossibility (e.g., 100.0% availability with zero redundancy over public internet, or conflicting numeric bounds within the same sentence). If so, report `Issue` (`RQ-06`)."
+        - "2. Otherwise, check whether relevant constraints (`technical_constraints`, `infrastructure`, `mandatory_technologies`, `external_dependencies`, `budget`, `timeline`) are supplied in `project-context.yaml`."
+        - "3. If relevant constraints are `missing`, return `Not Assessable` for `RQ-06` (never guess `Compliant` or `Issue`)."
+        - "4. If constraints are supplied, check whether the requirement contradicts any supplied constraint or known external limit. If a project-level feasibility concern is detected, also emit an `early_feasibility_signal` and recommend delegation to `fr.technical-feasibility`."
+      evidence_expectations: "Cite the requirement excerpt and the specific constraint in `project-context` (or the internal contradiction)."
+      false_positive_considerations: "Do NOT declare a requirement infeasible based on unverified model assumptions when project constraint context is missing."
+      exceptions: "Pure definitional business rules where technical realization constraints are `Not Applicable`."
+    rationale: "Enforces evidence-based feasibility checks and strict `Not Assessable` gating when constraints are absent (`RQ-06`)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Feasible)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Feasibility)" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-09, EX-14, GTC-01, GTC-09, GTC-14]
+
+  - rule_id: RQ-R012
+    rule_type: analysis
+    statement: "Evaluate objective verifiability of functional, behavioral, state-transition, constraint, and non-functional requirements."
+    inputs: [requirement-statement, acceptance-criteria, project-context]
+    method: |
+      criterion_id: RQ-07
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Determine the requirement type (functional behavior, state transition, data/interface rule, constraint, or non-functional quality attribute)."
+        - "2. Check whether compliance can be objectively verified by at least one standard method (Test, Demonstration, Analysis, or Inspection)."
+        - "3. For functional/behavioral/constraint requirements, verify that inputs/conditions and observable outputs/states/formats are deterministic (numeric metrics are NOT required if behavior/state is deterministic)."
+        - "4. For quantitative quality attributes (latency, throughput, capacity, availability), verify that a measurable criterion/threshold and condition are present either in the statement or in supplied acceptance criteria."
+        - "5. If the requirement delegates verification thresholds to an external test/AC artifact not provided in scope, return `Not Assessable`."
+      evidence_expectations: "Quote the requirement (and linked AC if present) and state why an objective pass/fail oracle exists or is missing."
+      false_positive_considerations: "Never require numerical metrics for deterministic functional behaviors, state transitions, role permissions, or protocol/schema constraints (e.g., 'The system shall lock the account after 5 consecutive failed attempts' or 'The export file shall conform to RFC 4180 CSV format' are verifiable without latency numbers)."
+      exceptions: "None."
+    rationale: "Ensures every requirement has an objective verification oracle without imposing artificial numeric dogma (`RQ-07`)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Verifiable)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Verification Checks)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Verifiable" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-03, EX-06, EX-10, GTC-01, GTC-03, GTC-06, GTC-10]
+
+  - rule_id: RQ-R013
+    rule_type: comparison
+    statement: "Verify requirement accuracy against its authoritative source, parent requirement, regulatory rule, or documented stakeholder intent."
+    inputs: [requirement-statement, parent-requirement, authoritative-source, project-context]
+    method: |
+      criterion_id: RQ-08
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check whether the requirement contains an internal mathematical or logical contradiction (e.g., mutually exclusive conditions or impossible arithmetic). If so, report `Issue` (`RQ-08`)."
+        - "2. Check whether an authoritative source, parent requirement, or documented stakeholder/business rule is supplied."
+        - "3. If no authoritative source is supplied (and the item is not declared as a top-level axiomatic policy), return `Not Assessable` for `RQ-08`."
+        - "4. If supplied, compare actors, conditions, operators (`<` vs `<=`), units, and outcomes between the requirement and its source; report `Issue` (`RQ-08`) on any discrepancy."
+      evidence_expectations: "Quote both the requirement statement and the authoritative source/parent requirement showing the exact discrepancy."
+      false_positive_considerations: "Never infer `Compliant` on `RQ-08` merely because the sentence sounds plausible when no source need or parent requirement was provided."
+      exceptions: "Top-level axiomatic business policies explicitly declared as the primary source itself (`Not Applicable`)."
+    rationale: "Prevents unsupported claims of correctness and catches transcription/derivation errors (`RQ-08`)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Correct)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Accuracy against Source)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Correct" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-09, EX-14, GTC-01, GTC-09, GTC-14]
+
+  - rule_id: RQ-R014
+    rule_type: comparison
+    statement: "Verify conformance to project-supplied conventions, templates, identifier formats, mandatory attributes, and glossary terminology."
+    inputs: [requirement-statement, artifact-metadata, project-context, glossary]
+    method: |
+      criterion_id: RQ-09
+      source_type: Official Standard
+      normative_level: Mandatory
+      detection_approach: Structural validation
+      applicable_languages: ["*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Check whether project conventions (template syntax, ID pattern, mandatory metadata fields, approved glossary/prohibited synonyms) are supplied in Project Context, review config, or the artifact's own preamble, OR whether the requirement explicitly declares a structured pattern (e.g., User Story or EARS)."
+        - "2. If no convention or declared pattern applies/is supplied, return `Not Assessable` for `RQ-09`."
+        - "3. If conventions are supplied, check ID format, mandatory attributes, glossary term consistency, and template structure."
+      evidence_expectations: "Quote the non-conforming element and cite the specific project convention or declared pattern rule."
+      false_positive_considerations: "NEVER enforce the English modal verb `shall` (or Vietnamese `phải`) as a universal rule unless the project's own convention mandates it."
+      exceptions: "Exploratory artifacts where conventions are explicitly marked `not-applicable`."
+    rationale: "Separates project-configured conventions (`RQ-09`) from universal semantic quality criteria."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Conforming)" }
+      - { source_id: SRC-0004, locator: "Individual Requirement Characteristics — Conforming" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-01, EX-07, EX-08, EX-09, GTC-01, GTC-07, GTC-08, GTC-09]
+
+  - rule_id: RQ-R015
+    rule_type: analysis
+    statement: "Validate representation-specific structural integrity for User Stories and EARS-formatted requirements when those formats are declared."
+    inputs: [requirement-statement, artifact-metadata, language-pack]
+    method: |
+      criterion_id: RQ-09
+      source_type: Industry Guidance
+      normative_level: Recommended
+      detection_approach: Structural validation
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [user-story, ears, backlog-item, srs, prd]
+      evaluation_steps:
+        - "1. When an item is declared as a User Story, check for the presence of Role (who), Goal/Capability (what), and Benefit/Rationale (why, or linked rationale) in the requirement's language (`As a ... I want ... so that ...` / `Là một ... tôi muốn ... để ...`). Missing Role or Goal is also an `RQ-04` (Complete) issue; missing Benefit without external rationale affects `RQ-01` (`Not Assessable`) and `RQ-09`."
+        - "2. When an item is declared as an EARS requirement, check adherence to the declared EARS clause ordering (`WHEN <trigger>` / `WHILE <state>` / `IF <unwanted condition> THEN` / `WHERE <feature>` + `<system name> shall/phải <system response>`)."
+      evidence_expectations: "Quote the User Story or EARS statement and identify the missing or inverted structural clause."
+      false_positive_considerations: "Do NOT apply User Story or EARS syntax checks to requirements that do not declare or use those representations."
+      exceptions: "Non-user-story and non-EARS artifacts."
+    rationale: "Supports multi-artifact representations (User Story, EARS) with format-aware structural checks (`RQ-04`, `RQ-09`)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete, Conforming)" }
+      - { source_id: SRC-0004, locator: "Structured Requirement Patterns" }
+    origin_note: null
+    validation:
+      status: unvalidated
+      examples: [EX-07, EX-08, GTC-07, GTC-08]
+
+  - rule_id: RQ-R016
+    rule_type: analysis
+    statement: "Handle mixed-language requirements by evaluating domain technical terms against glossary/conventions rather than flagging code-switching automatically."
+    inputs: [requirement-statement, language-pack, glossary, project-context]
+    method: |
+      criterion_id: RQ-03
+      source_type: Internal Convention
+      normative_level: Heuristic
+      detection_approach: Context-dependent reasoning
+      applicable_languages: ["en", "vi", "language-pack:*"]
+      applicable_artifacts: [srs, brd, prd, user-story, ears, use-case, functional-requirement-list, nfr-list, system-requirement-spec, api-spec, interface-spec, business-rule-doc, backlog-item, requirement-table]
+      evaluation_steps:
+        - "1. Detect when a requirement mixes two natural languages (e.g., Vietnamese sentence embedding English terms)."
+        - "2. Load both Language Packs (`vi` + `en`)."
+        - "3. Distinguish standard technical/domain identifiers (`OAuth 2.0`, `JWT`, `webhook`, `idempotency key`, `HTTP 429`) from ambiguous mixed-language prose where an undefined foreign adjective or inconsistent bilingual synonym creates confusion."
+        - "4. Only report `Issue` under `RQ-03` (if meaning is ambiguous) or `RQ-09` (if project glossary explicitly forbids the mixed term or maps it to a different canonical term)."
+      evidence_expectations: "Quote the mixed-language segment and explain why it causes semantic ambiguity or violates a specific glossary rule."
+      false_positive_considerations: "Standard English software engineering terms embedded in Vietnamese requirements are common industry practice and must NOT be flagged as defects unless ambiguous or prohibited by project conventions."
+      exceptions: "None."
+    rationale: "Prevents false positives on realistic multi-language engineering documents while catching genuine bilingual ambiguity (`RQ-03`, `RQ-09`)."
+    authority_level: internal-convention
+    source_refs: []
+    origin_note: "Skill_Review Multi-Language Architecture Policy (Section 6 of re.requirement-quality specification)"
+    validation:
+      status: unvalidated
+      examples: [EX-13, GTC-13]

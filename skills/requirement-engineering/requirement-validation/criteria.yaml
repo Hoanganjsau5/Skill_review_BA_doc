@@ -1,0 +1,313 @@
+# Criteria — Skill: re.requirement-validation (Schema: schemas/definitions/criterion.schema.json)
+# Evaluates semantic alignment and sufficiency of requirements relative to stakeholder needs, business/system objectives, policies, and operational concepts (RVAL-01 .. RVAL-06).
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-validation
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: RVAL-01
+    statement: "Every identified stakeholder need, problem statement, and target user capability in the authoritative upstream context must be adequately and completely addressed by one or more requirements."
+    rationale: "If an identified stakeholder need is omitted or only superficially covered by the specified requirements, the delivered system will fail to solve the stakeholder's problem even if every written requirement passes verification (ISO/IEC/IEEE 29148:2018 Clause 6.4)."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - vision-scope
+      - stakeholder-need-spec
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition & Validation)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11 (Stakeholder Needs & Validation Process)" }
+      - { source_id: SRC-0006, locator: "Stakeholder Needs & Validation Processes" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4 (Requirements Validation), ISO/IEC/IEEE 12207:2017 Clauses 6.4.2 & 6.4.11, and ISO/IEC/IEEE 15288:2023."
+    synthesis_note: |
+      name: "Stakeholder & Business Need Coverage"
+      evaluation_objective: "Verify that every stakeholder need in the authoritative baseline is addressed by requirements with sufficient functional/quality depth to solve the stated need."
+      pass_conditions:
+        - "Every in-scope stakeholder need has one or more corresponding requirements that collectively address all essential aspects of the need."
+      issue_conditions:
+        - "An identified in-scope stakeholder need has zero addressing requirements in the full requirement set."
+        - "Requirements address only a minor fragment of a multi-part stakeholder need, leaving the core stakeholder pain point unresolved."
+      required_context:
+        - "stakeholder_needs_baseline"
+        - "requirements_set"
+      optional_context:
+        - "release_scope_mapping"
+      standalone_assessable_when: "Assessable when stakeholder needs (in a separate artifact or upstream section) and the target requirements are provided."
+      not_assessable_conditions:
+        - "No stakeholder needs, problem statements, or user need baseline is provided."
+        - "For complete omission checks (RVAL-R001): only a partial slice of requirements is provided."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and ID/locator of the unaddressed or partially addressed Stakeholder Need."
+        - "Quotes of any partially matching requirements (or confirmation of zero matching requirements across the full set) demonstrating the unmet need."
+      scope_boundaries:
+        in_scope: "Semantic coverage of Stakeholder Needs by the specified requirements (Need Coverage)."
+        delegated_to_other_skills:
+          - "Coverage of declared document Scope section features within the requirement set -> re.requirement-set-quality (RSQ-01)"
+          - "Existence of structural trace links in a Traceability Matrix -> re.requirement-traceability (RTR-01, RTR-02)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-01"
+        - "examples/golden-test-cases.yaml#RVAL-GTC-06"
+
+  - criterion_id: RVAL-02
+    statement: "Specified requirements must faithfully preserve the semantic intent, target outcomes, and priority of the stakeholder needs from which they are derived, without distortion or silent narrowing."
+    rationale: "During requirement elicitation and translation, analysts may inadvertently distort a stakeholder need (e.g., turning a requirement for real-time self-service into a manual back-office batch process), resulting in a system that satisfies the spec on paper but is rejected by stakeholders."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition & Validation)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Able to be Validated" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11 (Stakeholder Needs & Validation Process)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4, NASA SP-2016-6105 Rev2 Section 4.2, and INCOSE GtWR v4."
+    synthesis_note: |
+      name: "Semantic Alignment with Stakeholder Intent"
+      evaluation_objective: "Verify that derived requirements accurately reflect the intended outcome, actor experience, and priority of stakeholder needs without semantic distortion or unapproved restriction."
+      pass_conditions:
+        - "Derived requirements preserve the intended actors, outcomes, service levels, and scope of the stakeholder need."
+      issue_conditions:
+        - "A requirement alters or contradicts the core outcome requested by the stakeholder need (e.g., manual admin action instead of customer self-service, or read-only view instead of actionable workflow)."
+        - "A requirement silently narrows the eligible user group, channel, or operational condition requested by the stakeholder without documented rationale."
+        - "A requirement assigns low/optional priority to a capability the stakeholder baseline designates as mandatory/critical."
+      required_context:
+        - "stakeholder_needs_baseline"
+        - "requirements_set"
+      optional_context:
+        - "documented_tradeoff_or_descoping_decisions"
+      standalone_assessable_when: "Assessable whenever one or more requirements and their corresponding stakeholder need(s) are provided (even for a partial requirement slice)."
+      not_assessable_conditions:
+        - "No stakeholder need statements or upstream intent baseline is provided."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and locator of the Stakeholder Need."
+        - "Exact quote and locator of the derived Requirement(s), explaining the semantic distortion or silent narrowing."
+      scope_boundaries:
+        in_scope: "Semantic fidelity and intent preservation between Stakeholder Needs and Requirements across one or more requirements."
+        delegated_to_other_skills:
+          - "Internal contradiction between two peer requirements in the same set -> re.requirement-set-quality (RSQ-03)"
+          - "Broken or asymmetric ID links in a trace matrix -> re.requirement-traceability (RTR-03, RTR-04)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-02"
+
+  - criterion_id: RVAL-03
+    statement: "Specified requirements must demonstrably align with, operationalize, and not undermine declared business objectives, success metrics (KPIs), and system-level goals."
+    rationale: "Software and system requirements exist to achieve measurable business and mission outcomes. Requirements that work against declared KPIs or leave strategic business goals with no operationalizing capabilities compromise project ROI."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - vision-scope
+      - business-case
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition & Validation)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11 (Stakeholder Needs & Validation Process)" }
+      - { source_id: SRC-0006, locator: "Stakeholder Needs & Validation Processes" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clauses 5.2 & 6.4 and NASA SP-2016-6105 Rev2 Section 4.2."
+    synthesis_note: |
+      name: "Business & System Objective Alignment"
+      evaluation_objective: "Ensure requirements support declared business objectives and target KPIs, and do not introduce workflows or thresholds that prevent achieving those objectives."
+      pass_conditions:
+        - "Declared business/system objectives and target KPIs are supported by operationalizing functional and quality requirements."
+        - "Requirement thresholds (e.g., processing time, automation rate, availability) are compatible with business KPI targets."
+      issue_conditions:
+        - "Requirements mandate workflows, latencies, or manual bottlenecks that directly prevent achieving a declared business objective or KPI target."
+        - "A declared in-scope business objective has zero supporting functional or quality requirements in the full specification."
+      required_context:
+        - "business_or_system_objectives"
+        - "requirements_set"
+      optional_context:
+        - "kpi_targets"
+      standalone_assessable_when: "Assessable when business/system objectives (Vision, BRD, Business Case) and target requirements are provided."
+      not_assessable_conditions:
+        - "No business objectives, system goals, or KPIs are provided in the review context."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and locator of the Business/System Objective or KPI target."
+        - "Exact quote and locator of the conflicting requirement(s) (or search summary showing absence of supporting requirements across the full set)."
+      scope_boundaries:
+        in_scope: "Alignment between Business/System Objectives (KPIs, mission goals) and specified Requirements."
+        delegated_to_other_skills:
+          - "Missing trace link ID between Objective ID and Requirement ID in a trace table -> re.requirement-traceability (RTR-01)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-03"
+
+  - criterion_id: RVAL-04
+    statement: "Specified requirements must semantically comply with authoritative business rules, organizational policies, regulatory mandates, and explicit domain constraints."
+    rationale: "Violating authoritative business rules or regulatory constraints (e.g., data retention, tax rounding, consent, segregation of duties) makes the resulting system non-compliant or illegal to operate."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - regulatory-requirement-extract
+    default_severity_hint: critical
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11 (Stakeholder Needs & Validation Process)" }
+      - { source_id: SRC-0006, locator: "Stakeholder Needs & Validation Processes" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4 and ISO/IEC/IEEE 12207:2017 Clause 6.4.2."
+    synthesis_note: |
+      name: "Compliance with Authoritative Business Rules, Policies & Constraints"
+      evaluation_objective: "Verify that requirement logic, calculations, permissions, and data handling rules comply with authoritative business policies and regulatory extracts provided in context."
+      pass_conditions:
+        - "Requirements adhere to all applicable business rules, regulatory mandates, and domain constraints in the authoritative baseline."
+      issue_conditions:
+        - "A requirement permits an action, role assignment, data retention period, or calculation that violates an authoritative business rule or regulatory policy."
+      required_context:
+        - "authoritative_policies_or_business_rules"
+        - "requirements_set"
+      optional_context: []
+      standalone_assessable_when: "Assessable whenever authoritative business rules/policies and one or more requirements are provided."
+      not_assessable_conditions:
+        - "No authoritative business rules, policies, or regulatory constraints are provided in the review context."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and locator of the authoritative Business Rule, Policy, or Regulation."
+        - "Exact quote and locator of the non-compliant Requirement, explaining the policy violation."
+      scope_boundaries:
+        in_scope: "Semantic compliance of requirements against authoritative external/upstream Business Rules, Policies, and Regulations."
+        delegated_to_other_skills:
+          - "Peer-to-peer contradiction between two software requirements when no upstream policy is involved -> re.requirement-set-quality (RSQ-03)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-04"
+
+  - criterion_id: RVAL-05
+    statement: "Every requirement in the specification must have an identifiable justification grounded in a stakeholder need, business objective, authoritative policy, or essential system/operational enablement (freedom from gold-plating)."
+    rationale: "Unjustified requirements ('gold-plating' or scope creep) consume development budget, increase attack surface and maintenance complexity, and delay delivery without delivering stakeholder or business value."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Rationale & Necessity)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition & Validation)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Able to be Validated" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clauses 5.2.5 & 6.4, NASA SP-2016-6105 Rev2 Section 4.2 (Rationale), and INCOSE GtWR v4."
+    synthesis_note: |
+      name: "Freedom from Unjustified Requirements (Gold-Plating Prevention)"
+      evaluation_objective: "Identify requirements that introduce unrequested features, vanity capabilities, or arbitrary constraints with no justification in stakeholder needs, business objectives, policies, or necessary system architecture."
+      pass_conditions:
+        - "Each requirement either fulfills an identifiable stakeholder need, business objective, or policy, or provides necessary technical/operational enablement (e.g., security, audit, error recovery)."
+      issue_conditions:
+        - "A requirement introduces a functional feature, integration, or constraint that has no connection to any stakeholder need, business objective, policy, or system enablement rationale (gold-plating)."
+      required_context:
+        - "full_upstream_validation_baseline (stakeholder_needs, business_objectives, policies)"
+        - "requirements_set"
+      optional_context:
+        - "requirement_rationale_attributes"
+      standalone_assessable_when: "Assessable when the complete upstream baseline of needs/objectives/policies for the domain is provided."
+      not_assessable_conditions:
+        - "Upstream stakeholder needs and business objectives are not provided or are known to be incomplete."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and ID of the unjustified requirement."
+        - "Reference to the complete upstream needs/objectives baseline showing that no need, objective, policy, or architectural rationale supports the feature."
+      scope_boundaries:
+        in_scope: "Validating across the upstream baseline whether requirements represent unrequested feature creep / gold-plating."
+        delegated_to_other_skills:
+          - "Missing structural backward trace link ID in a trace table -> re.requirement-traceability (RTR-01, RTR-06)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-05"
+        - "examples/golden-test-cases.yaml#RVAL-GTC-07"
+
+  - criterion_id: RVAL-06
+    statement: "Specified requirements must support valid, realistic end-to-end operational concepts (ConOps), user workflows, and stakeholder acceptance conditions in the intended operating environment."
+    rationale: "Requirements may align individually with isolated needs yet fail in practice if they break the end-to-end user journey, assume unrealistic operational preconditions, or cannot be validated against stakeholder acceptance scenarios (ISO/IEC/IEEE 29148:2018 Clause 6.4, ISO/IEC/IEEE 15288:2023)."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - vision-scope
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition & Validation)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Able to be Validated" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11 (Stakeholder Needs & Validation Process)" }
+      - { source_id: SRC-0006, locator: "Stakeholder Needs & Validation Processes" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4, ISO/IEC/IEEE 15288:2023 Validation Process, NASA SP-2016-6105 Rev2 Section 4.2 (ConOps validation), and INCOSE GtWR v4 (Able to be Validated)."
+    synthesis_note: |
+      name: "Operational & Usage Scenario Validity"
+      evaluation_objective: "Verify that the specified requirements enable target actors to complete end-to-end operational scenarios under real-world environmental conditions and define clear stakeholder acceptance outcomes."
+      pass_conditions:
+        - "Requirements support all steps and environmental assumptions of the declared Concept of Operations (ConOps) / end-to-end user journeys."
+        - "Stakeholder acceptance criteria or validation conditions are compatible with how stakeholders operate."
+      issue_conditions:
+        - "Requirements impose operational assumptions that conflict with the declared operating environment (e.g., requiring continuous broadband connectivity or desktop hardware for an offline field-worker scenario)."
+        - "An end-to-end user journey described in the operational concept breaks midway because the requirements forbid or omit an essential user workflow handoff."
+      required_context:
+        - "operational_scenarios_or_conops"
+        - "requirements_set"
+      optional_context:
+        - "environmental_constraints"
+        - "stakeholder_acceptance_criteria"
+      standalone_assessable_when: "Assessable when operational scenarios (ConOps, business process flows, user journeys, or operating environment descriptions) and requirements are provided."
+      not_assessable_conditions:
+        - "No operational scenarios, ConOps, user journey descriptions, or operating environment context are provided."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and locator from the Operational Scenario / ConOps / User Journey."
+        - "Exact quote and locator of the requirement(s) that conflict with or break the operational scenario."
+      scope_boundaries:
+        in_scope: "Validation of requirements against Operational Concepts (ConOps), real-world user workflows, and stakeholder acceptance expectations."
+        delegated_to_other_skills:
+          - "Whether a single requirement is testable/verifiable by QA -> re.requirement-quality (RQ-07)"
+          - "Whether Test Cases are linked to Requirements -> re.requirement-traceability (RTR-02)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-08"
+        - "examples/golden-test-cases.yaml#RVAL-GTC-09"

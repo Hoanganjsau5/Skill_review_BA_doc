@@ -1,0 +1,195 @@
+# Vietnamese Language Pack (Gói ngôn ngữ Tiếng Việt) for `re.requirement-quality`
+# Mọi mẫu từ/cụm từ dưới đây là TÍN HIỆU PHÁT HIỆN (Heuristic Signals), KHÔNG phải lỗi tự động.
+
+language_pack_id: re.requirement-quality.lang.vi
+language_code: vi
+language_name: "Vietnamese (Tiếng Việt)"
+version: 0.1.0
+applies_to_skill:
+  skill_id: re.requirement-quality
+  version_range: "^0.1.0"
+
+usage_policy: >
+  Các từ và cụm từ trong gói ngôn ngữ này chỉ là tín hiệu gợi ý kiểm tra (detection signals).
+  Agent bắt buộc phải đọc toàn câu, kiểm tra ngưỡng đi kèm, Acceptance Criteria liên kết và Glossary
+  của dự án trước khi tạo Finding. Tuyệt đối không kết luận lỗi chỉ vì khớp từ khóa.
+
+signal_categories:
+  vague_qualitative_terms:
+    related_criteria: [RQ-03, RQ-07]
+    related_rules: [RQ-R003, RQ-R012]
+    signals:
+      - nhanh
+      - nhanh chóng
+      - tức thời
+      - ngay lập tức
+      - kịp thời
+      - thời gian thực
+      - dễ
+      - dễ dàng
+      - đơn giản
+      - thuận tiện
+      - thân thiện
+      - thân thiện với người dùng
+      - trực quan
+      - mượt mà
+      - phù hợp
+      - hợp lý
+      - thỏa đáng
+      - đầy đủ
+      - tối ưu
+      - hiệu quả
+      - linh hoạt
+      - ổn định
+      - an toàn tuyệt đối
+      - tối đa
+      - tối thiểu
+    contextual_check: >
+      Kiểm tra xem từ định tính có được định nghĩa ngay sau đó bằng ngưỡng đo lường, danh sách hành vi
+      cụ thể hoặc thuật ngữ trong glossary hay không. Lưu ý: cụm "ngay lập tức chuyển trạng thái sang X"
+      trong yêu cầu chức năng có thể diễn tả thứ tự sự kiện (không có bước trung gian) chứ không phải độ trễ.
+
+  imprecise_quantifiers:
+    related_criteria: [RQ-03, RQ-04, RQ-07]
+    related_rules: [RQ-R003]
+    signals:
+      - một số
+      - vài
+      - nhiều
+      - đa số
+      - phần lớn
+      - khoảng
+      - xấp xỉ
+      - gần như
+      - lượng lớn
+      - tải bình thường
+      - tải cao
+    contextual_check: >
+      Kiểm tra xem lượng từ có được định nghĩa trong hồ sơ tải (workload profile) hoặc glossary không.
+
+  open_ended_clauses_and_placeholders:
+    related_criteria: [RQ-04]
+    related_rules: [RQ-R008]
+    signals:
+      - v.v.
+      - vân vân
+      - "..."
+      - và các trường khác
+      - và các chức năng tương tự
+      - bao gồm nhưng không giới hạn
+      - như là (khi dùng để định nghĩa tập nghĩa vụ mở mà không có danh sách đóng)
+      - TBD
+      - TODO
+      - chưa xác định
+      - sẽ bổ sung sau
+      - cập nhật sau
+    contextual_check: >
+      Báo lỗi RQ-04 khi cụm từ mở làm tập hợp dữ liệu/hành vi bắt buộc không có điểm dừng.
+      Không báo lỗi nếu cụm "ví dụ: ..." chỉ minh họa cho một quy tắc đã được định nghĩa đóng và đầy đủ.
+
+  ambiguous_combinators:
+    related_criteria: [RQ-03, RQ-05]
+    related_rules: [RQ-R005]
+    signals:
+      - và/hoặc
+      - "/"
+      - "A và B hoặc C"
+      - "A hoặc B và C"
+      - '"hay" (khi nối nhiều mệnh đề điều kiện phức tạp không rõ phạm vi)'
+    contextual_check: >
+      Kiểm tra xem bảng chân trị logic có nhiều hơn một cách hiểu không. Bỏ qua dấu "/" trong thuật ngữ
+      kỹ thuật, đơn vị đo, định dạng ngày tháng (`dd/MM/yyyy`, `km/h`, `TCP/IP`, `CI/CD`).
+
+  escape_clauses:
+    related_criteria: [RQ-03, RQ-04, RQ-07]
+    related_rules: [RQ-R006]
+    signals:
+      - khi cần thiết
+      - nếu cần
+      - nếu có thể
+      - trong trường hợp cần thiết
+      - tùy trường hợp
+      - tùy tình huống
+      - khi phù hợp
+      - nếu khả thi
+      - theo yêu cầu (khi không nói rõ yêu cầu nào/của ai)
+    contextual_check: >
+      Nếu mệnh đề điều kiện được chỉ rõ ngay sau đó (ví dụ: "khi cần thiết theo cấu hình bảo mật của tenant"),
+      thì không phải là escape clause.
+
+  pronoun_and_reference_patterns:
+    related_criteria: [RQ-03]
+    related_rules: [RQ-R004]
+    signals:
+      - nó
+      - họ
+      - chúng
+      - điều này
+      - việc này
+      - hệ thống đó
+      - thành phần này
+      - dữ liệu trên
+      - như trên
+      - vừa nêu
+    contextual_check: >
+      Chỉ báo lỗi RQ-03 khi phía trước có từ hai danh từ/cụm danh từ trở lên đều có thể là đối tượng được quy chiếu.
+
+  compound_obligation_markers:
+    related_criteria: [RQ-05]
+    related_rules: [RQ-R009]
+    signals:
+      - "phải ... và phải ..."
+      - "cần ... đồng thời ..."
+      - "vừa phải ... vừa phải ..."
+      - "ngoài ra hệ thống còn phải ..."
+      - "bên cạnh đó, ..."
+    contextual_check: >
+      Phân biệt việc gộp hai chức năng/nghĩa vụ độc lập (vi phạm RQ-05) với việc liệt kê các trường
+      dữ liệu của cùng một bản ghi hoặc các điều kiện đồng thời của cùng một sự kiện (hợp lệ).
+
+grammatical_considerations:
+  - id: VI-GRAM-01
+    topic: "Câu tỉnh lược chủ ngữ hoặc câu bị động không rõ tác nhân"
+    related_criteria: [RQ-04]
+    guidance: >
+      Trong tiếng Việt, câu yêu cầu viết dạng "Cần xác thực đơn hàng trước khi lưu" hoặc "Đơn hàng được duyệt"
+      thường lược bỏ chủ ngữ. Chỉ báo lỗi RQ-04 khi người đọc không thể xác định được tác nhân thực hiện
+      (hệ thống, người dùng, hay dịch vụ bên ngoài) từ câu đó hoặc tiêu đề mục chứa nó.
+  - id: VI-GRAM-02
+    topic: "Từ tình thái chỉ nghĩa vụ (Modal markers) và quy ước dự án"
+    related_criteria: [RQ-09]
+    guidance: >
+      Tài liệu tiếng Việt có thể dùng "phải", "cần", "sẽ", "cho phép", hoặc mẫu User Story ("Là một ... tôi muốn ... để ...").
+      Tuyệt đối KHÔNG bắt buộc mọi câu phải có từ "phải" trừ khi quy ước của dự án (`project-context`) quy định.
+  - id: VI-GRAM-03
+    topic: "Trộn thuật ngữ tiếng Anh chuyên ngành trong câu yêu cầu tiếng Việt (Code-switching)"
+    related_criteria: [RQ-03, RQ-09]
+    guidance: >
+      Việc giữ nguyên thuật ngữ kỹ thuật tiếng Anh (`access token`, `webhook`, `idempotency key`, `payload`, `timeout`)
+      trong câu yêu cầu tiếng Việt là thực hành phổ biến và hợp lệ (RQ-R016). Chỉ báo lỗi khi thuật ngữ đó
+      mơ hồ hoặc vi phạm bảng thuật ngữ (glossary) của dự án.
+
+representation_patterns:
+  user_story:
+    pattern: "Là một <vai trò>, tôi muốn <mục tiêu/khả năng>, để <lợi ích/lý do>."
+    notes: "Áp dụng RQ-R015 khi tài liệu/mục yêu cầu khai báo định dạng User Story."
+  ears:
+    ubiquitous: "<Tên hệ thống> phải <phản hồi của hệ thống>."
+    event_driven: "KHI <sự kiện kích hoạt>, <tên hệ thống> phải <phản hồi của hệ thống>."
+    state_driven: "TRONG KHI <trạng thái>, <tên hệ thống> phải <phản hồi của hệ thống>."
+    unwanted_behavior: "NẾU <điều kiện không mong muốn>, THÌ <tên hệ thống> phải <phản hồi của hệ thống>."
+    optional_feature: "Ở NƠI MÀ <tính năng tùy chọn được bật>, <tên hệ thống> phải <phản hồi của hệ thống>."
+
+false_positive_warnings:
+  - "Không báo lỗi từ 'nhanh chóng' hoặc 'đầy đủ' nếu ngay sau đó câu yêu cầu đã liệt kê rõ ngưỡng thời gian hoặc danh sách đóng các trường bắt buộc."
+  - "Không báo lỗi từ 'và' khi nối các trường trong cùng một bản ghi hoặc nối hai điều kiện của cùng một trigger."
+  - "Không báo lỗi thuật ngữ tiếng Anh chuẩn ngành được nhúng trong câu tiếng Việt (ví dụ: 'API Gateway', 'JWT', 'HTTP 403')."
+
+examples:
+  compliant:
+    - statement: "Khi người dùng nhập sai mật khẩu 5 lần liên tiếp trong vòng 15 phút, Hệ thống Xác thực phải khóa tài khoản đó trong 30 phút và ghi nhận sự kiện `ACCOUNT_LOCKED` vào nhật ký bảo mật."
+      why: "Rõ tác nhân, điều kiện kích hoạt, ngưỡng thời gian/số lần và hành động xác định; hai vế hành động gắn chặt trong cùng một phản ứng nguyên tử khi xảy ra sự kiện."
+  problematic:
+    - statement: "Hệ thống cần xử lý đơn hàng nhanh chóng và/hoặc gửi thông báo cho bộ phận liên quan khi cần thiết, v.v."
+      signals_triggered: ["nhanh chóng", "và/hoặc", "khi cần thiết", "v.v."]
+      why: "Từ định tính không ngưỡng 'nhanh chóng' (RQ-03, RQ-07), từ nối mơ hồ 'và/hoặc' (RQ-03, RQ-05), escape clause 'khi cần thiết' và không rõ 'bộ phận liên quan' (RQ-03, RQ-04), danh sách mở 'v.v.' (RQ-04)."

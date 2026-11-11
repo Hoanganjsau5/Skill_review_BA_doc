@@ -1,20 +1,82 @@
 # Source Registry — Schema: schemas/definitions/source-entry.schema.json
-# Trạng thái: CHƯA CÓ NGUỒN NÀO ĐƯỢC ĐĂNG KÝ.
-# Không thêm nguồn khi chưa xác minh được thông tin (title, publisher, edition, URL/định danh).
+# Mọi nguồn tham khảo dùng để xây dựng Skill phải được đăng ký tại đây kèm thông tin phiên bản và giới hạn xác minh.
 
 registry_version: 0.1.0
-sources: []
+sources:
+  - source_id: SRC-0001
+    title: "ISO/IEC/IEEE 29148:2018 — Systems and software engineering — Life cycle processes — Requirements engineering"
+    publisher: "ISO / IEC / IEEE"
+    authority_level: official-standard
+    version: "2018 (Second edition)"
+    published_date: "2018-11-30"
+    identifier: "ISO/IEC/IEEE 29148:2018 (DOI: 10.1109/IEEESTD.2018.8559686)"
+    retrieved_at: "2026-11-11"
+    access_note: "Secondary-source and official abstract/catalog verification only. Full ISO/IEC/IEEE text is paywalled and not stored in the repository; Clauses 5.2.5 (individual requirement characteristics), 5.2.6 (characteristics of a set of requirements), 6.4 (requirements validation), and 6.5 (requirements traceability) are referenced at the conceptual/structural level without claiming verbatim quotations."
+    storage: summary-only
+    local_path: "knowledge/standards/SRC-0001-iso-iec-ieee-29148-2018.md"
+    notes: "Primary normative reference for individual requirement characteristics (Clause 5.2.5), set of requirements characteristics (Clause 5.2.6), requirements validation against stakeholder needs/objectives (Clause 6.4), and bidirectional requirements traceability (Clause 6.5)."
 
-# Ví dụ cấu trúc (comment, không có hiệu lực):
-# - source_id: SRC-0001
-#   title: "<tên tài liệu>"
-#   publisher: "<tổ chức/tác giả>"
-#   authority_level: official-standard   # official-standard | industry-best-practice | expert-recommendation | internal-convention
-#   version: "<edition/version>"
-#   published_date: "YYYY-MM-DD"         # hoặc null nếu không rõ
-#   identifier: "<URL / ISBN / mã chuẩn>"
-#   retrieved_at: "YYYY-MM-DD"
-#   access_note: "<bản quyền / cách truy cập>"
-#   storage: summary-only                # summary-only | full-text-permitted | link-only
-#   local_path: null                     # đường dẫn tới ghi chú trong knowledge/standards hoặc references
-#   notes: ""
+  - source_id: SRC-0002
+    title: "NASA Systems Engineering Handbook — Appendix C: How to Write a Good Requirement"
+    publisher: "National Aeronautics and Space Administration (NASA)"
+    authority_level: industry-best-practice
+    version: "NASA/SP-2016-6105 Rev2"
+    published_date: "2016-02-01"
+    identifier: "NASA/SP-2016-6105 Rev2 (Appendix C)"
+    retrieved_at: "2026-11-11"
+    access_note: "Publicly available US Government publication (NASA STI Program). Summarized in local reference note; treated as supporting engineering guidance and heuristic checklists, NOT as mandatory ISO clauses."
+    storage: summary-only
+    local_path: "knowledge/references/SRC-0002-nasa-se-handbook-appendix-c.md"
+    notes: "Provides practical review heuristics for ambiguity, compound requirements, editorial pitfalls, rationale, and verification alignment."
+
+  - source_id: SRC-0003
+    title: "NASA Systems Engineering Handbook — Section 4.2: Technical Requirements Definition"
+    publisher: "National Aeronautics and Space Administration (NASA)"
+    authority_level: industry-best-practice
+    version: "NASA/SP-2016-6105 Rev2 (Section 4.2)"
+    published_date: "2016-02-01"
+    identifier: "NASA/SP-2016-6105 Rev2 (Section 4.2)"
+    retrieved_at: "2026-11-11"
+    access_note: "Publicly available US Government publication (NASA STI Program). Summarized in local reference note; treated as supporting engineering guidance."
+    storage: summary-only
+    local_path: "knowledge/references/SRC-0003-nasa-technical-requirements-definition.md"
+    notes: "Provides guidance on requirement rationale, level of abstraction, valid constraints vs premature design solutions, feasibility within project constraints, and verification method selection."
+
+  - source_id: SRC-0004
+    title: "INCOSE Guide to Writing Requirements (GtWR)"
+    publisher: "International Council on Systems Engineering (INCOSE) Requirements Working Group"
+    authority_level: industry-best-practice
+    version: "Version 4 (INCOSE-TP-2010-006-04)"
+    published_date: "2023-07-01"
+    identifier: "INCOSE-TP-2010-006-04"
+    retrieved_at: "2026-11-11"
+    access_note: "Verified via official INCOSE Version 4 summary sheet and secondary practitioner literature; full copyrighted publication is not stored in the repository. Treated as industry guidance and heuristic rules, NOT as mandatory ISO clauses."
+    storage: summary-only
+    local_path: "knowledge/references/SRC-0004-incose-gtwr-v4.md"
+    notes: "Separates individual statement characteristics from set characteristics (Complete, Consistent, Feasible, Comprehensible, Able to be Validated); informs linguistic/structural heuristics and set-level organization without reproducing copyrighted text."
+
+  - source_id: SRC-0005
+    title: "ISO/IEC/IEEE 12207:2017 — Systems and software engineering — Software life cycle processes"
+    publisher: "ISO / IEC / IEEE"
+    authority_level: official-standard
+    version: "2017 (First edition)"
+    published_date: "2017-11-01"
+    identifier: "ISO/IEC/IEEE 12207:2017 (DOI: 10.1109/IEEESTD.2017.8100771)"
+    retrieved_at: "2026-11-11"
+    access_note: "Secondary-source and official catalog verification only. Full ISO/IEC/IEEE text is paywalled and not stored in the repository; referenced at the process/structural level for Stakeholder Needs and Requirements Definition (Clause 6.4.2), System/Software Requirements Definition (Clause 6.4.3), Validation Process (Clause 6.4.11), and bidirectional traceability expectations."
+    storage: summary-only
+    local_path: "knowledge/standards/SRC-0005-iso-iec-ieee-12207-2017.md"
+    notes: "Provides process-level foundations for distinguishing Stakeholder Requirements validation, System/Software Requirement Set consistency, and bidirectional traceability across software life cycle artifacts."
+
+  - source_id: SRC-0006
+    title: "ISO/IEC/IEEE 15288:2023 — Systems and software engineering — System life cycle processes"
+    publisher: "ISO / IEC / IEEE"
+    authority_level: official-standard
+    version: "2023 (Second edition)"
+    published_date: "2023-05-01"
+    identifier: "ISO/IEC/IEEE 15288:2023 (DOI: 10.1109/IEEESTD.2023.10134799)"
+    retrieved_at: "2026-11-11"
+    access_note: "Secondary-source and official catalog verification only. Full ISO/IEC/IEEE text is paywalled and not stored in the repository; referenced at the conceptual/process level for Stakeholder Needs and Requirements Definition, System Requirements Definition, and Validation processes."
+    storage: summary-only
+    local_path: "knowledge/standards/SRC-0006-iso-iec-ieee-15288-2023.md"
+    notes: "Provides systems engineering process-level separation between validating that requirements satisfy stakeholder needs/operational concepts in the intended environment vs verifying traceability and set coherence."

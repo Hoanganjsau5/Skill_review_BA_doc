@@ -1,0 +1,517 @@
+# Golden Test Cases for `re.requirement-quality`
+# Tests both true-positive detection, context-missing `Not Assessable` gates, `Not Applicable` edge cases, and false-positive prevention.
+
+suite_id: re.requirement-quality.golden-suite
+skill_id: re.requirement-quality
+skill_version: 0.1.0
+status_enum: [Compliant, Issue, Not Assessable, Not Applicable]
+
+test_cases:
+  - test_id: GTC-01
+    scenario: "1. Clear and testable functional requirement"
+    language: en
+    artifact_type: srs
+    input_requirement:
+      requirement_id: REQ-INV-101
+      requirement_type: functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/order-srs.md", section: "3.2.1", line_range: "42-45", element_id: "REQ-INV-101" }
+      text: "When a buyer submits a purchase order with a total amount exceeding the buyer's configured credit limit, the Order Service shall reject the purchase order and return error code ERR_CREDIT_LIMIT_EXCEEDED."
+    supplied_context:
+      parent_requirement: "BR-12: Prevent credit exposure beyond approved buyer credit limits."
+      technical_constraints: "Synchronous REST Order Service with access to buyer credit profile in PostgreSQL."
+      project_conventions: "ID pattern ^REQ-[A-Z]+-[0-9]{3}$; EARS/shall prose; glossary defines buyer, purchase order, credit limit."
+    expected_criterion_statuses:
+      RQ-01: Compliant
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Compliant
+      RQ-07: Compliant
+      RQ-08: Compliant
+      RQ-09: Compliant
+    expected_findings: []
+    explanation: "All 9 criteria are satisfied with complete context. Tests zero false positives on a well-formed functional requirement."
+
+  - test_id: GTC-02
+    scenario: "2. Ambiguous requirement (pronoun & boolean combinator ambiguity)"
+    language: en
+    artifact_type: functional-requirement-list
+    input_requirement:
+      requirement_id: REQ-WMS-014
+      requirement_type: functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/wms-reqs.md", section: "2.4", line_range: "18-20", element_id: "REQ-WMS-014" }
+      text: "When the Warehouse Controller sends a dispatch manifest to the Carrier Gateway, it shall archive it and/or notify the supervisor or the shift lead and the dock clerk."
+    supplied_context: {}
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Issue
+      RQ-04: Compliant
+      RQ-05: Issue
+      RQ-06: Not Assessable
+      RQ-07: Issue
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-03
+        rule_ids: [RQ-R004, RQ-R005]
+        category: clarity
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "it shall archive it and/or notify the supervisor or the shift lead and the dock clerk"
+      - criterion_id: RQ-05
+        rule_ids: [RQ-R009]
+        category: structure
+        classification: potential-issue
+        severity: minor
+        confidence: medium
+        evidence_excerpt: "archive it and/or notify the supervisor"
+    explanation: "Detects multiple pronoun antecedents ('it'), 'and/or', and unbracketed 'A or B and C' boolean ambiguity under RQ-03, while keeping RQ-01/06/08/09 Not Assessable due to missing context."
+
+  - test_id: GTC-03
+    scenario: "3. Requirement with vague qualitative expressions and open-ended tail"
+    language: en
+    artifact_type: nfr-list
+    input_requirement:
+      requirement_id: NFR-PORTAL-008
+      requirement_type: non-functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/nfr.md", section: "4.1", line_range: "10-11", element_id: "NFR-PORTAL-008" }
+      text: "The analytics dashboard shall be user-friendly and shall render large reports quickly as appropriate, etc."
+    supplied_context: {}
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Issue
+      RQ-04: Issue
+      RQ-05: Issue
+      RQ-06: Not Assessable
+      RQ-07: Issue
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-03
+        rule_ids: [RQ-R003, RQ-R006]
+        category: clarity
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "user-friendly and shall render large reports quickly as appropriate"
+      - criterion_id: RQ-04
+        rule_ids: [RQ-R006, RQ-R008]
+        category: completeness
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "as appropriate, etc."
+      - criterion_id: RQ-05
+        rule_ids: [RQ-R009]
+        category: structure
+        classification: confirmed-issue
+        severity: minor
+        confidence: high
+        evidence_excerpt: "shall be user-friendly and shall render large reports quickly"
+      - criterion_id: RQ-07
+        rule_ids: [RQ-R012]
+        category: verifiability
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "user-friendly and shall render large reports quickly"
+    explanation: "Flags unbounded qualitative terms ('user-friendly', 'large', 'quickly'), escape clause ('as appropriate'), open-ended 'etc.', and multi-obligation bundling."
+
+  - test_id: GTC-04
+    scenario: "4. Requirement with multiple independent obligations"
+    language: en
+    artifact_type: brd
+    input_requirement:
+      requirement_id: REQ-HR-022
+      requirement_type: functional
+      requirement_level: business
+      location: { artifact_path: "artifacts/requirements/hr-brd.md", section: "5.3", line_range: "88-92", element_id: "REQ-HR-022" }
+      text: "The Payroll Module shall calculate monthly net salary per employee by the 25th of each month, shall export tax withholding files to the national tax portal, and shall allow employees to update their emergency contact phone numbers in the self-service profile."
+    supplied_context: {}
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Issue
+      RQ-05: Issue
+      RQ-06: Not Assessable
+      RQ-07: Issue
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-05
+        rule_ids: [RQ-R009]
+        category: structure
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "calculate monthly net salary ... export tax withholding files ... allow employees to update their emergency contact phone numbers"
+    explanation: "Bundles three unrelated capabilities across payroll calculation, tax portal integration, and employee self-service profile management."
+
+  - test_id: GTC-05
+    scenario: "5. Requirement containing a valid implementation constraint (anti-false-positive)"
+    language: en
+    artifact_type: interface-spec
+    input_requirement:
+      requirement_id: CON-SEC-003
+      requirement_type: constraint
+      requirement_level: interface
+      location: { artifact_path: "artifacts/requirements/webhook-icd.md", section: "2.1", line_range: "14-16", element_id: "CON-SEC-003" }
+      text: "All external partner webhook payloads transmitted over the public internet shall be signed using HMAC-SHA256 with a 256-bit shared secret in the X-Signature-256 HTTP header."
+    supplied_context:
+      architecture_decisions: "PADR-004: Mandates HMAC-SHA256 in X-Signature-256 header for partner webhook authentication."
+      parent_requirement: "SEC-01: Authenticate all inbound partner webhook traffic."
+      technical_constraints: "Standard TLS 1.3 + HTTP header processing supported by API Gateway."
+    expected_criterion_statuses:
+      RQ-01: Compliant
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Compliant
+      RQ-07: Compliant
+      RQ-08: Compliant
+      RQ-09: Not Assessable
+    expected_findings: []
+    explanation: "Tests that a valid technical constraint backed by an ADR is Compliant on RQ-02 (Appropriate) and NOT misclassified as premature design."
+
+  - test_id: GTC-06
+    scenario: "6. Requirement that does not need a numerical measurement"
+    language: en
+    artifact_type: system-requirement-spec
+    input_requirement:
+      requirement_id: REQ-DOOR-019
+      requirement_type: functional
+      requirement_level: system
+      location: { artifact_path: "artifacts/requirements/autoclave-sys.md", section: "6.1", line_range: "30-32", element_id: "REQ-DOOR-019" }
+      text: "While the autoclave chamber pressure is above atmospheric baseline, the Safety Interlock Controller shall prevent the chamber door latch from transitioning to the UNLOCKED state."
+    supplied_context:
+      glossary: "atmospheric baseline: 101.3 kPa +/- 2.0 kPa as measured by chamber sensor P1; UNLOCKED: solenoid latch open state."
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Not Assessable
+      RQ-07: Compliant
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings: []
+    explanation: "Tests that RQ-07 (Verifiable) is Compliant for a deterministic state-transition requirement without demanding artificial latency/percentage numbers."
+
+  - test_id: GTC-07
+    scenario: "7. User Story format missing acceptance criteria for ambiguous filter/output"
+    language: en
+    artifact_type: user-story
+    input_requirement:
+      requirement_id: US-BILL-041
+      requirement_type: functional
+      requirement_level: user
+      location: { artifact_path: "artifacts/requirements/backlog.md", section: "Sprint-4", line_range: "12-13", element_id: "US-BILL-041" }
+      text: "As a billing administrator, I want to export overdue invoices so that I can follow up with customers."
+    supplied_context:
+      project_conventions: "User Story template 'As a <role>, I want <goal>, so that <benefit>'; Acceptance Criteria required for export format and business rule thresholds."
+      acceptance_criteria: null
+    expected_criterion_statuses:
+      RQ-01: Compliant
+      RQ-02: Compliant
+      RQ-03: Issue
+      RQ-04: Issue
+      RQ-05: Compliant
+      RQ-06: Not Assessable
+      RQ-07: Issue
+      RQ-08: Not Assessable
+      RQ-09: Issue
+    expected_findings:
+      - criterion_id: RQ-04
+        rule_ids: [RQ-R007, RQ-R015]
+        category: completeness
+        classification: needs-clarification
+        severity: major
+        confidence: high
+        evidence_excerpt: "I want to export overdue invoices"
+      - criterion_id: RQ-07
+        rule_ids: [RQ-R012]
+        category: testability
+        classification: needs-clarification
+        severity: major
+        confidence: high
+        evidence_excerpt: "export overdue invoices"
+    explanation: "Evaluates User Story without penalizing absence of 'shall', while flagging missing definition of 'overdue' and export format/AC under RQ-04/RQ-07/RQ-09."
+
+  - test_id: GTC-08
+    scenario: "8. EARS-style requirement (Unwanted Behavior pattern)"
+    language: en
+    artifact_type: ears
+    input_requirement:
+      requirement_id: EARS-TEL-012
+      requirement_type: functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/edge-ears.md", section: "3.4", line_range: "55-57", element_id: "EARS-TEL-012" }
+      text: "IF the telemetry uplink connection is lost for more than 10 consecutive seconds, THEN the Edge Collector shall buffer incoming sensor frames in non-volatile local storage up to 500 MB."
+    supplied_context:
+      parent_requirement: "SYS-TEL-02: Prevent telemetry loss during transient connectivity drops."
+      technical_constraints: "Edge hardware includes 4 GB dedicated non-volatile flash storage."
+      project_conventions: "EARS syntax required; ID pattern ^EARS-[A-Z]+-[0-9]{3}$."
+    expected_criterion_statuses:
+      RQ-01: Compliant
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Compliant
+      RQ-07: Compliant
+      RQ-08: Compliant
+      RQ-09: Compliant
+    expected_findings: []
+    explanation: "Well-formed EARS Unwanted Behavior requirement with full context passes all 9 criteria."
+
+  - test_id: GTC-09
+    scenario: "9. Requirement with missing business, source, constraint, and convention context"
+    language: en
+    artifact_type: requirement-table
+    input_requirement:
+      requirement_id: REQ-EXPORT-005
+      requirement_type: functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/ledger-table.md", section: "Table-1", line_range: "8", element_id: "REQ-EXPORT-005" }
+      text: "When an auditor requests a ledger snapshot for a fiscal quarter, the Reporting Service shall generate a digitally signed PDF report containing all posted journal entries for that quarter."
+    supplied_context:
+      business_objectives: null
+      parent_requirement: null
+      technical_constraints: null
+      authoritative_source: null
+      project_conventions: null
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Not Assessable
+      RQ-07: Compliant
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings: []
+    explanation: "Critical test for context dependency gates: Agent must return Not Assessable on RQ-01, RQ-06, RQ-08, RQ-09 and emit zero fabricated Findings."
+
+  - test_id: GTC-10
+    scenario: "10. Requirement with missing external verification matrix"
+    language: en
+    artifact_type: prd
+    input_requirement:
+      requirement_id: NFR-SEARCH-002
+      requirement_type: non-functional
+      requirement_level: system
+      location: { artifact_path: "artifacts/requirements/catalog-prd.md", section: "7.2", line_range: "102-103", element_id: "NFR-SEARCH-002" }
+      text: "The Product Catalog Search API shall meet the latency targets and concurrency tiers specified in Performance Benchmark Matrix PERF-MAT-2026-v2."
+    supplied_context:
+      referenced_artifacts_missing: ["PERF-MAT-2026-v2"]
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Not Assessable
+      RQ-05: Compliant
+      RQ-06: Not Assessable
+      RQ-07: Not Assessable
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-07
+        rule_ids: [RQ-R008, RQ-R012]
+        category: verifiability
+        classification: needs-clarification
+        severity: major
+        confidence: high
+        evidence_excerpt: "specified in Performance Benchmark Matrix PERF-MAT-2026-v2"
+    explanation: "Because PERF-MAT-2026-v2 is outside the supplied scope, RQ-04 and RQ-07 are Not Assessable and generate a needs-clarification Finding rather than a false confirmed-issue."
+
+  - test_id: GTC-11
+    scenario: "11. Vietnamese requirement with vague terms, escape clause, and open-ended tail"
+    language: vi
+    artifact_type: srs
+    input_requirement:
+      requirement_id: REQ-NOTIFY-007
+      requirement_type: functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/refund-srs-vi.md", section: "3.5", line_range: "60-62", element_id: "REQ-NOTIFY-007" }
+      text: "Hệ thống cần xử lý yêu cầu hoàn tiền nhanh chóng và gửi thông báo phù hợp cho khách hàng và/hoặc nhân viên hỗ trợ khi cần thiết, v.v."
+    supplied_context: {}
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Issue
+      RQ-04: Issue
+      RQ-05: Issue
+      RQ-06: Not Assessable
+      RQ-07: Issue
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-03
+        rule_ids: [RQ-R003, RQ-R005, RQ-R006]
+        category: clarity
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "nhanh chóng và gửi thông báo phù hợp cho khách hàng và/hoặc nhân viên hỗ trợ khi cần thiết"
+      - criterion_id: RQ-04
+        rule_ids: [RQ-R006, RQ-R008]
+        category: completeness
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "khi cần thiết, v.v."
+      - criterion_id: RQ-07
+        rule_ids: [RQ-R012]
+        category: verifiability
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "xử lý yêu cầu hoàn tiền nhanh chóng và gửi thông báo phù hợp"
+    explanation: "Validates Vietnamese Language Pack signals ('nhanh chóng', 'phù hợp', 'và/hoặc', 'khi cần thiết', 'v.v.') mapped to language-independent criteria RQ-03, RQ-04, RQ-05, RQ-07."
+
+  - test_id: GTC-12
+    scenario: "12. English requirement with bounded qualitative term and unit slash (anti-false-positive)"
+    language: en
+    artifact_type: api-spec
+    input_requirement:
+      requirement_id: API-RATE-004
+      requirement_type: non-functional
+      requirement_level: interface
+      location: { artifact_path: "artifacts/requirements/gateway-api.md", section: "4.3", line_range: "25-27", element_id: "API-RATE-004" }
+      text: "When a client exceeds 100 requests/second per API key, the API Gateway shall quickly reject excess requests within 15 ms (p99) by returning HTTP status 429 Too Many Requests."
+    supplied_context: {}
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Not Assessable
+      RQ-07: Compliant
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings: []
+    explanation: "Even though 'quickly' and '/' appear, 'within 15 ms (p99)' bounds 'quickly' and 'requests/second' is a unit. Must produce zero Findings."
+
+  - test_id: GTC-13
+    scenario: "13. Mixed-language requirement (Vietnamese + English)"
+    language: "vi+en"
+    artifact_type: srs
+    input_requirement:
+      requirement_id: REQ-AUTH-011
+      requirement_type: functional
+      requirement_level: software
+      location: { artifact_path: "artifacts/requirements/auth-srs.md", section: "2.2", line_range: "31-32", element_id: "REQ-AUTH-011" }
+      text: "Khi hệ thống bị lag hoặc user thực hiện flow bất thường, Authentication Service phải tự động handle một cách smooth."
+    supplied_context:
+      glossary: "Authentication Service: Dịch vụ xác thực trung tâm."
+    expected_criterion_statuses:
+      RQ-01: Not Assessable
+      RQ-02: Compliant
+      RQ-03: Issue
+      RQ-04: Issue
+      RQ-05: Compliant
+      RQ-06: Not Assessable
+      RQ-07: Issue
+      RQ-08: Not Assessable
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-03
+        rule_ids: [RQ-R003, RQ-R016]
+        category: clarity
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "bị lag hoặc user thực hiện flow bất thường ... tự động handle một cách smooth"
+      - criterion_id: RQ-04
+        rule_ids: [RQ-R007]
+        category: completeness
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "tự động handle một cách smooth"
+      - criterion_id: RQ-07
+        rule_ids: [RQ-R012]
+        category: verifiability
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "bị lag ... flow bất thường ... handle một cách smooth"
+    explanation: "Does not flag 'Authentication Service' (defined technical term), but flags undefined mixed-language slang ('bị lag', 'flow bất thường', 'handle một cách smooth')."
+
+  - test_id: GTC-14
+    scenario: "14. Business rule contradicting authoritative parent source and operational constraint"
+    language: vi
+    artifact_type: business-rule-doc
+    input_requirement:
+      requirement_id: BR-TAX-009
+      requirement_type: business-rule
+      requirement_level: business
+      location: { artifact_path: "artifacts/requirements/pos-rules.md", section: "1.4", line_range: "19-21", element_id: "BR-TAX-009" }
+      text: "Đối với hóa đơn bán lẻ có tổng giá trị thanh toán từ 20.000.000 VNĐ trở lên, Hệ thống Thanh toán phải cho phép khách hàng hoàn tất giao dịch bằng tiền mặt tại quầy mà không cần xác thực định danh."
+    supplied_context:
+      authoritative_source: "REG-PAY-01: Mọi giao dịch có tổng giá trị từ 20.000.000 VNĐ trở lên bắt buộc thực hiện qua phương thức chuyển khoản ngân hàng đã xác thực định danh, không chấp nhận thanh toán tiền mặt."
+      technical_constraints: "CON-POS-02: Hệ thống POS tại quầy bị khóa chức năng thu tiền mặt đối với hóa đơn >= 20.000.000 VNĐ."
+    expected_criterion_statuses:
+      RQ-01: Issue
+      RQ-02: Compliant
+      RQ-03: Compliant
+      RQ-04: Compliant
+      RQ-05: Compliant
+      RQ-06: Issue
+      RQ-07: Compliant
+      RQ-08: Issue
+      RQ-09: Not Assessable
+    expected_findings:
+      - criterion_id: RQ-08
+        rule_ids: [RQ-R013]
+        category: consistency
+        classification: confirmed-issue
+        severity: critical
+        confidence: high
+        evidence_excerpt: "cho phép khách hàng hoàn tất giao dịch bằng tiền mặt tại quầy mà không cần xác thực định danh"
+      - criterion_id: RQ-06
+        rule_ids: [RQ-R011]
+        category: consistency
+        classification: confirmed-issue
+        severity: major
+        confidence: high
+        evidence_excerpt: "hoàn tất giao dịch bằng tiền mặt tại quầy"
+    explanation: "Demonstrates that a clear, complete, singular, and testable statement can still fail RQ-08 (Correct) and RQ-06 (Feasible) when it contradicts its authoritative source and operational constraint."
+
+  - test_id: GTC-15
+    scenario: "15. Edge case where criteria are genuinely Not Applicable (section container row)"
+    language: en
+    artifact_type: requirement-table
+    input_requirement:
+      requirement_id: SEC-HDR-04
+      requirement_type: section-header
+      requirement_level: structural-container
+      location: { artifact_path: "artifacts/requirements/inventory-table.md", section: "4.2", line_range: "1", element_id: "SEC-HDR-04" }
+      text: "4.2 Inventory Reservation and Stock Allocation Rules"
+    supplied_context:
+      item_metadata: "row_type: section-header (non-normative grouping title for child requirements REQ-INV-201..210)"
+      project_conventions: "Section header rows use ID pattern ^SEC-HDR-[0-9]{2}$ and numbered title."
+    expected_criterion_statuses:
+      RQ-01: Not Applicable
+      RQ-02: Not Applicable
+      RQ-03: Not Applicable
+      RQ-04: Not Applicable
+      RQ-05: Not Applicable
+      RQ-06: Not Applicable
+      RQ-07: Not Applicable
+      RQ-08: Not Applicable
+      RQ-09: Compliant
+    expected_findings: []
+    explanation: "Tests genuine Not Applicable handling: a non-normative container row is not a requirement statement, so RQ-01..RQ-08 are Not Applicable while RQ-09 (Conforming to header convention) is Compliant."

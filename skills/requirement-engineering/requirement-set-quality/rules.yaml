@@ -1,0 +1,363 @@
+# Analysis & Comparison Rules — Skill: re.requirement-set-quality (Schema: schemas/definitions/analysis-rule.schema.json)
+# Operational rules RSQ-R001 .. RSQ-R010 mapped to criteria RSQ-01 .. RSQ-06.
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-set-quality
+  owner_version: 0.1.0
+
+rules:
+  - rule_id: RSQ-R001
+    rule_type: comparison
+    statement: "Compare the in-scope features, actors, operational modes, and external interfaces listed in the declared Scope boundary against the full requirement set to detect any in-scope item with zero corresponding requirements or any requirement mandating an explicitly out-of-scope item."
+    inputs:
+      - declared_scope_boundary
+      - full_requirement_set
+    method: |
+      criterion_id: RSQ-01
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: semantic-scope-to-set-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "vision-scope", "use-case-spec", "user-story-backlog", "system-requirement-spec", "interface-requirement-spec"]
+      evaluation_steps:
+        - "1. Check whether both declared_scope_boundary and full_requirement_set (completeness_mode: full) are provided; if either is missing or partial, mark RSQ-01 as not_assessable."
+        - "2. Extract the list of explicitly In-Scope features/modules, user/system actor roles, and external interfaces, as well as explicitly Out-of-Scope items."
+        - "3. Map each requirement in full_requirement_set to the scope items, actors, and interfaces it addresses."
+        - "4. Flag any In-Scope feature, actor role, or external interface that has 0 mapped requirements in the set."
+        - "5. Flag any active mandatory requirement that implements an item explicitly declared Out-of-Scope for the current release."
+      evidence_expectations:
+        - "Quote and locator from declared_scope_boundary showing the In-Scope or Out-of-Scope declaration."
+        - "Exhaustive search summary over full_requirement_set (or quote of the conflicting requirement)."
+      false_positive_considerations:
+        - "Do not flag items explicitly marked 'Phase 2 / Future Release / Out of Scope' as missing requirements."
+        - "Do not flag when completeness_mode is partial (e.g., reviewing only Module A while Scope covers Modules A, B, and C)."
+      exceptions:
+        - "Shared platform/infrastructure capabilities explicitly delegated to an external system specification by reference."
+    rationale: "Ensures the requirement set is bounded by and completely covers the agreed project/document scope (ISO/IEC/IEEE 29148:2018 Clause 5.2.6)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Software Requirements Definition)" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (Complete and Bounded set)."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-01"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-06"
+
+  - rule_id: RSQ-R002
+    rule_type: analysis
+    statement: "Analyze stateful entities, resource allocations, and mutating workflows across the requirement set to detect missing companion lifecycle transitions (e.g., entry into a terminal-looking lock/suspension/reservation state with no exit/release/expiration requirement, or nominal mutating operations with no failure/rejection requirement)."
+    inputs:
+      - requirement_set
+    method: |
+      criterion_id: RSQ-02
+      source_type: synthesized-method
+      normative_level: normative-standard
+      detection_approach: state-lifecycle-and-counterpart-completeness-analysis
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract all domain entities, status/state values, resource locks/holds, and mutating operations referenced across requirement_set."
+        - "2. For each non-terminal state (e.g., Locked, Frozen, Reserved, Pending Approval, Escrowed), check whether the set defines at least one valid transition out of that state (e.g., unlock, approve/reject, expire, cancel)."
+        - "3. For each mutating or external-integration workflow, check whether the set includes requirements governing invalid input rejection, external failure, or timeout recovery."
+        - "4. If completeness_mode is full (or covers the complete entity module) and a required companion transition/failure rule is absent, emit a Finding under RSQ-02."
+      evidence_expectations:
+        - "Quote and ID of the requirement(s) introducing the state, lock, or mutating operation."
+        - "Explanation of the missing lifecycle counterpart and confirmation that no requirement in the set defines it."
+      false_positive_considerations:
+        - "Permanent audit records or immutable ledger entries are intentionally append-only and do not require update/delete requirements."
+        - "If reviewing a partial backlog slice, report missing counterparts as observation (insufficient_evidence) rather than a confirmed defect."
+      exceptions:
+        - "Intentionally terminal states (e.g., Permanently Purged, Completed Archive) documented as final."
+    rationale: "Prevents dead-end system states, leaked resource holds, and undefined failure behavior across the requirement set."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0002, locator: "Appendix C (How to Write a Good Requirement)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 and INCOSE GtWR v4 Set Completeness."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-02"
+
+  - rule_id: RSQ-R003
+    rule_type: analysis
+    statement: "Scan the requirement set structure for deferred sections, empty functional groups, or set-level placeholders (e.g., 'Section 4.3 Reporting Requirements — TBD in next draft') that leave an entire capability area unspecified."
+    inputs:
+      - requirement_set
+      - section_structure
+    method: |
+      criterion_id: RSQ-02
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: structural-placeholder-scan
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Inspect section headings, epic placeholders, and set-level notes in requirement_set."
+        - "2. Distinguish single-requirement inline placeholders (owned by re.requirement-quality RQ-04) from whole-section or whole-feature placeholders where an entire group of requirements is missing or marked TBD/TODO."
+        - "3. Emit a Finding under RSQ-02 for any set-level deferred section or empty capability group."
+      evidence_expectations:
+        - "Exact quote and section locator of the deferred section or empty capability placeholder."
+      false_positive_considerations:
+        - "Inline TBD inside a single requirement's threshold (e.g., 'REQ-12: Response time shall be < TBD ms') belongs to re.requirement-quality (RQ-04), not RSQ-R003."
+      exceptions:
+        - "Sections explicitly marked 'Not Applicable (N/A)' with a valid justification for the project type."
+    rationale: "Whole-section placeholders indicate that an entire cluster of requirements is missing from the set."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (How to Write a Good Requirement)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Derived from NASA SP-2016-6105 Rev2 Appendix C and INCOSE GtWR v4."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-02"
+
+  - rule_id: RSQ-R004
+    rule_type: comparison
+    statement: "Compare pairs and clusters of requirements governing the same actor, entity, and precondition/trigger to detect mutually incompatible system behaviors, state transitions, or access permissions."
+    inputs:
+      - requirement_set
+    method: |
+      criterion_id: RSQ-03
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: pairwise-condition-outcome-consistency-check
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec", "system-requirement-spec", "interface-requirement-spec"]
+      evaluation_steps:
+        - "1. Normalize each requirement in requirement_set into (actor, entity/object, trigger/precondition, action/permission/postcondition)."
+        - "2. Group requirements that share an overlapping (entity/object, trigger/precondition) domain."
+        - "3. Compare pairs (r_i, r_j) within each group to determine whether both postconditions/permissions can be simultaneously satisfied."
+        - "4. Check whether either r_i or r_j contains an explicit exception/override clause referencing the other (e.g., 'Except as specified in REQ-09...')."
+        - "5. If r_i and r_j mandate mutually exclusive outcomes under the same condition without an explicit precedence rule, emit a critical/high Finding citing both r_i and r_j."
+      evidence_expectations:
+        - "Exact quotes and locators of both conflicting requirements r_i and r_j."
+        - "Logical proof showing the shared condition and the mutually exclusive outcomes."
+      false_positive_considerations:
+        - "General rule + explicit exception rule (where the exception clearly narrows the general rule) is a valid specification pattern, though if the general rule lacks a cross-reference, a low-severity clarity note may be appropriate rather than a critical contradiction."
+        - "Requirements applying to distinct operational modes or distinct user roles do not conflict unless those modes/roles can co-occur simultaneously."
+      exceptions:
+        - "Explicitly prioritized override rules (e.g., Emergency Override supersedes Normal Mode)."
+    rationale: "Eliminates behavioral and logical contradictions within the requirement set (ISO/IEC/IEEE 29148:2018 Clause 5.2.6)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0002, locator: "Appendix C (How to Write a Good Requirement)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (Consistent set)."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-03"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-07"
+
+  - rule_id: RSQ-R005
+    rule_type: comparison
+    statement: "Compare numeric thresholds, timing constraints, capacity limits, business formulas, data field lengths/types, and measurement units across requirements in the set to detect incompatible bounds or unit mismatches."
+    inputs:
+      - requirement_set
+    method: |
+      criterion_id: RSQ-03
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: quantitative-and-schema-bound-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec", "system-requirement-spec", "interface-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract all quantitative bounds (timeouts, latencies, retries, limits, percentages, currency rules, field lengths) and units across requirement_set."
+        - "2. Group bounds that refer to the same operation, timer, attribute, or interface payload."
+        - "3. Compare bounds across requirements: flag contradictory values (e.g., session timeout = 15 min in REQ-04 vs 30 min in REQ-28; max upload = 10 MB in UI req vs 5 MB in API req) or unaligned units."
+        - "4. Check composite timing chains (e.g., end-to-end SLA <= 2s while synchronous sub-steps mandate waits totaling 5s)."
+      evidence_expectations:
+        - "Exact quotes and IDs of all requirements containing the conflicting numbers, formulas, or units."
+      false_positive_considerations:
+        - "Different tiers or user plans (e.g., Free Tier max 5 MB vs Enterprise Tier max 100 MB) are consistent when the tier condition is explicit."
+      exceptions: []
+    rationale: "Quantitative and unit inconsistencies across sections are a major source of integration and verification failures."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0002, locator: "Appendix C (How to Write a Good Requirement)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 and NASA SP-2016-6105 Rev2 Appendix C."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-03"
+
+  - rule_id: RSQ-R006
+    rule_type: analysis
+    statement: "Analyze domain terms, actor names, entity names, and status enumerations across the requirement set to detect unacknowledged synonym drift (multiple terms for the same concept) or homonym collision (same term used for distinct concepts)."
+    inputs:
+      - requirement_set
+      - domain_glossary
+    method: |
+      criterion_id: RSQ-03
+      source_type: industry-guidance
+      normative_level: normative-standard
+      detection_approach: cross-set-lexicon-and-entity-consistency-analysis
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract recurring actor titles, business entities, and state/status names across requirement_set."
+        - "2. Compare usage across sections (and against domain_glossary if provided)."
+        - "3. Flag cases where different terms denote the exact same actor/entity/state without alias declaration (e.g., 'Merchant' / 'Vendor' / 'Seller' used interchangeably across requirements, or status 'Cancelled' vs 'Voided' vs 'Aborted')."
+        - "4. Flag cases where a single term refers to two incompatible domain entities in different sections."
+      evidence_expectations:
+        - "Quotes and requirement IDs showing the divergent terms or conflicting definitions across the set."
+      false_positive_considerations:
+        - "Single-statement conformity to a project glossary belongs to re.requirement-quality (RQ-09); RSQ-R006 specifically targets cross-requirement drift across the set when multiple requirements diverge from each other."
+      exceptions:
+        - "Explicitly declared aliases in the document glossary."
+    rationale: "Consistent terminology across all requirements in a set prevents misinterpretation of domain entities and states."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 and INCOSE GtWR v4."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-03"
+
+  - rule_id: RSQ-R007
+    rule_type: comparison
+    statement: "Compare normalized semantic propositions across all requirements in the set to detect verbatim duplicate requirements or paraphrased semantic duplicates stating the same obligation."
+    inputs:
+      - requirement_set
+    method: |
+      criterion_id: RSQ-04
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: normalized-proposition-equivalence-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Normalize each requirement r_i into (actor, trigger/condition, action, target_object, constraint)."
+        - "2. Compare pairs (r_i, r_j) across the set."
+        - "3. If r_i and r_j express identical normalized propositions (either verbatim or via synonym/active-passive paraphrase) as peer requirements, emit a Finding under RSQ-04."
+      evidence_expectations:
+        - "Exact quotes and IDs/locators of both duplicate requirements r_i and r_j."
+      false_positive_considerations:
+        - "Do not flag an intentional parent summary requirement and its explicitly linked child decomposition requirement as duplicates."
+        - "Do not flag symmetrical client-side and server-side interface obligations if they govern distinct subsystems."
+      exceptions: []
+    rationale: "Eliminates redundant requirement statements that cause divergence during maintenance (ISO/IEC/IEEE 29148:2018 Clause 5.2.6)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 and INCOSE GtWR v4."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-04"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-08"
+
+  - rule_id: RSQ-R008
+    rule_type: comparison
+    statement: "Identify requirements in different sections that partially restate the same obligation with subtle omissions or extra qualifiers without cross-referencing a single canonical requirement."
+    inputs:
+      - requirement_set
+    method: |
+      criterion_id: RSQ-04
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: partial-overlap-and-divergent-restatement-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Identify requirement pairs (r_i, r_j) that share the same actor, action, and target_object."
+        - "2. Check whether r_j repeats the core obligation of r_i while adding or omitting secondary qualifiers (e.g., r_i states 'System shall log failed logins with IP and timestamp'; r_j in Security section states 'System shall log failed logins with user ID and timestamp') without cross-reference."
+        - "3. Flag the unacknowledged partial overlap and recommend consolidating into one canonical requirement or using an explicit cross-reference."
+      evidence_expectations:
+        - "Exact quotes and IDs of the overlapping requirements r_i and r_j, highlighting the overlapping core and divergent qualifiers."
+      false_positive_considerations:
+        - "Complementary requirements that intentionally address orthogonal aspects (e.g., functional trigger vs performance latency of that trigger) are not redundant if they do not restate the functional rule."
+      exceptions: []
+    rationale: "Partial restatements across sections confuse implementers about which list of attributes or qualifiers is authoritative."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (How to Write a Good Requirement)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Synthesized from INCOSE GtWR v4 and NASA SP-2016-6105 Rev2 Appendix C."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-04"
+
+  - rule_id: RSQ-R009
+    rule_type: analysis
+    statement: "Construct the intra-set dependency graph (explicit requirement cross-references, prerequisite states/events, and producer-consumer data dependencies) to detect dangling internal references, missing producer capabilities, or circular precondition deadlocks."
+    inputs:
+      - requirement_set
+    method: |
+      criterion_id: RSQ-05
+      source_type: synthesized-method
+      normative_level: normative-standard
+      detection_approach: intra-set-dependency-graph-analysis
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec", "interface-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract all explicit intra-set references (e.g., 'per REQ-05', 'after completing US-12') and implicit prerequisite dependencies (precondition states, consumed calculated scores/events)."
+        - "2. Verify that every explicitly referenced internal requirement ID exists in the set and actually specifies the referenced rule."
+        - "3. When completeness_mode is full, verify that every prerequisite system state or calculated artifact consumed by r_i has at least one producer requirement or external interface in the set."
+        - "4. Traverse the precondition graph to detect cycles (e.g., r_i requires state B produced only by r_j, while r_j requires state A produced only by r_i)."
+      evidence_expectations:
+        - "Quotes and IDs of the dependent requirement(s) and evidence of the missing/mismatched internal target or circular dependency chain."
+      false_positive_considerations:
+        - "Cross-artifact traceability links (e.g., REQ -> TEST or NEED -> REQ) are owned by re.requirement-traceability, NOT RSQ-R009. RSQ-R009 strictly evaluates dependencies AMONG requirements inside the requirement set."
+      exceptions: []
+    rationale: "Ensures the requirement set forms a coherent, executable system of preconditions and data flows."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Software Requirements Definition)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 and ISO/IEC/IEEE 12207:2017 Clause 6.4.3."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-05"
+
+  - rule_id: RSQ-R010
+    rule_type: analysis
+    statement: "Evaluate the structural organization and classification metadata of the requirement set to detect misclassified requirements (e.g., NFRs/constraints placed as functional steps or vice versa), severe peer granularity mismatches, or unplaced orphan requirements within the specification."
+    inputs:
+      - requirement_set
+      - section_or_category_metadata
+    method: |
+      criterion_id: RSQ-06
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: taxonomy-and-granularity-coherence-check
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Check whether section headings, requirement type tags, or hierarchy levels are present; if stripped, mark RSQ-06 as not_assessable."
+        - "2. Compare each requirement's substance (functional behavior, quality attribute/NFR, external interface, design/business constraint) against its assigned section or category tag."
+        - "3. Compare abstraction granularity across peer requirements in the same section."
+        - "4. Flag misclassified items, ungrouped orphan requirements inside the document structure, or extreme granularity mixing among peer items."
+      evidence_expectations:
+        - "Quotes, IDs, and section/category labels of the misclassified or structurally anomalous requirements."
+      false_positive_considerations:
+        - "Feature-specific performance criteria attached as Acceptance Criteria of a User Story are valid in Agile backlogs and should not be flagged as misclassified unless they state global system architecture constraints."
+        - "Premature implementation detail inside a single requirement belongs to re.requirement-quality (RQ-02)."
+      exceptions: []
+    rationale: "Improves comprehensibility, reviewability, and architectural allocation of the requirement set (INCOSE GtWR v4)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Characteristics of a set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics (Complete, Consistent, Comprehensible)" }
+    origin_note: "Derived from INCOSE GtWR v4 Set Characteristics (Comprehensible, Structured)."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-09"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-10"

@@ -1,0 +1,328 @@
+# Criteria — Skill: re.requirement-set-quality (Schema: schemas/definitions/criterion.schema.json)
+# Evaluates the collective characteristics of a set of requirements (RSQ-01 .. RSQ-06).
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-set-quality
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: RSQ-01
+    statement: "Every feature area, user/system actor role, subsystem boundary, and external interface explicitly declared as in-scope for the artifact or release must be represented by corresponding requirements in the requirement set."
+    rationale: "If an in-scope feature, actor, or interface declared in the project/document scope boundary has zero corresponding requirements in the specification, that capability will be omitted from design, estimation, and verification."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - vision-scope
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+      - interface-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Complete and Bounded set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Complete" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Software Requirements Definition)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (Complete and Bounded set of requirements), ISO/IEC/IEEE 12207:2017 Clause 6.4.3, and INCOSE GtWR v4 Set Completeness characteristics."
+    synthesis_note: |
+      name: "Scope Coverage"
+      evaluation_objective: "Verify that all capabilities, actors, operational modes, and external interfaces declared within the project or document scope boundary are covered by requirements in the set."
+      pass_conditions:
+        - "Every feature, actor role, and external interface listed as In-Scope in the scope definition has at least one corresponding requirement in the provided full requirement set."
+        - "Features explicitly marked as Out-of-Scope or Future Release are appropriately excluded from active mandatory requirements."
+      issue_conditions:
+        - "An explicitly declared In-Scope feature area, actor role, or external interface has no corresponding requirement(s) in the full requirement set."
+        - "Requirements specify mandatory capabilities that the Scope section explicitly declares Out-of-Scope (internal scope boundary violation)."
+      required_context:
+        - "full_requirement_set"
+        - "declared_scope_boundary"
+      optional_context:
+        - "context_diagram_or_interface_list"
+        - "actor_catalog"
+        - "release_phase_mapping"
+      standalone_assessable_when: "Assessable when both the declared scope section/artifact and the full requirement set for that scope are provided."
+      not_assessable_conditions:
+        - "No declared scope section, feature list, or boundary definition is provided."
+        - "Only a partial slice/subset of the requirement set (completeness_mode: partial) is provided."
+      not_applicable_conditions:
+        - "Single-requirement snippet review where no requirement set is under evaluation."
+      evidence_expectations:
+        - "Exact quote and locator from the declared Scope definition identifying the in-scope feature/actor/interface."
+        - "Confirmation of absence across the searched sections of the full requirement set (or quote of the out-of-scope requirement)."
+      scope_boundaries:
+        in_scope: "Alignment between the document/project's declared Scope boundary and the coverage of the requirement set."
+        delegated_to_other_skills:
+          - "Whether the declared Scope or requirement set addresses all Stakeholder Needs -> re.requirement-validation (RVAL-01)"
+          - "Whether an individual requirement statement is self-contained -> re.requirement-quality (RQ-04)"
+          - "Whether formal trace links exist in a Traceability Matrix -> re.requirement-traceability (RTR-01, RTR-02)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-01"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-06"
+
+  - criterion_id: RSQ-02
+    statement: "Within covered scope areas, the requirement set must be collectively complete, leaving no unexplained functional, state-transition, lifecycle counterpart, or critical exception-handling gaps, and containing no unresolved set-level deferred sections."
+    rationale: "Even when every high-level scope area has at least one happy-path requirement, a requirement set is incomplete if it introduces stateful entities or workflows without essential companion capabilities (e.g., locking without unlocking, reservation without expiration/cancellation, entry into a state with no exit transition)."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - interface-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Complete set of requirements)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Completeness & TBD elimination)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Complete" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (Complete set of requirements), INCOSE GtWR v4 Set Completeness, and NASA SP-2016-6105 Rev2 Appendix C."
+    synthesis_note: |
+      name: "Set Completeness & Companion Coverage"
+      evaluation_objective: "Determine whether the requirement set covers necessary companion lifecycle operations, state transitions, boundary/exception counterparts, and sections without unexplained gaps."
+      pass_conditions:
+        - "All domain entities and stateful workflows introduced in the set have complete lifecycle/state transitions relevant to the declared scope."
+        - "Critical error, rejection, timeout, or rollback counterparts are specified in the set for mutating or external-facing workflows."
+        - "No entire requirement section or capability group is left as TBD/TODO."
+      issue_conditions:
+        - "A requirement introduces a state (e.g., 'Suspended', 'Locked', 'Pending Refund') or resource lock, and no requirement in the set defines how that state is exited, resolved, or expired."
+        - "A mutating workflow defines only the nominal path across the set without any requirement governing failure, rejection, or timeout behavior."
+        - "A section or requirement cluster in the specification is marked TBD/To Be Defined at the set level."
+      required_context:
+        - "requirement_set_for_feature_or_system"
+      optional_context:
+        - "state_machine_or_workflow_model"
+        - "domain_lifecycle_conventions"
+      standalone_assessable_when: "Assessable when the full requirement set (or the complete requirement cluster for a bounded feature/entity) is provided."
+      not_assessable_conditions:
+        - "Only an isolated fragment of a feature's requirements is provided and companion requirements may exist in unprovided sections."
+      not_applicable_conditions:
+        - "Read-only or static informational capability where state transitions and mutating rollbacks do not apply."
+      evidence_expectations:
+        - "Exact quote and ID of the requirement(s) introducing the state, lock, or workflow."
+        - "Identification of the specific missing companion transition/operation and verification that no requirement in the provided set covers it."
+      scope_boundaries:
+        in_scope: "Set-level functional, state-machine, and lifecycle counterpart completeness across requirements."
+        delegated_to_other_skills:
+          - "Missing actor, action, target, or TBD inside a single requirement sentence -> re.requirement-quality (RQ-04)"
+          - "Missing stakeholder need coverage -> re.requirement-validation (RVAL-01)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-02"
+
+  - criterion_id: RSQ-03
+    statement: "Requirements within the set must be internally consistent and free from logical, behavioral, state, threshold, unit, permission, or terminology contradictions with one another."
+    rationale: "Contradictory requirements within the same specification make it impossible for any implementation to simultaneously satisfy the requirement set, causing implementation rework, defects, or contractual disputes."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - vision-scope
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - interface-requirement-spec
+      - regulatory-requirement-extract
+    default_severity_hint: critical
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Consistent set of requirements)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Consistency)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Consistent" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (Consistent set of requirements) and INCOSE GtWR v4 Set Consistency."
+    synthesis_note: |
+      name: "Internal Consistency & Freedom from Contradictions"
+      evaluation_objective: "Verify that no two or more requirements in the set specify mutually incompatible obligations, thresholds, permissions, state transitions, units, or domain term meanings."
+      pass_conditions:
+        - "Pairs and clusters of requirements governing the same entity, event, actor, or metric specify compatible outcomes, thresholds, and permissions."
+        - "Where one requirement is an exception or override to another, the precedence relationship is explicitly stated."
+        - "Domain terms, status names, and measurement units are used consistently across the requirement set."
+      issue_conditions:
+        - "Two requirements specify incompatible system actions, permissions, or state transitions under overlapping preconditions without a declared precedence rule."
+        - "Two requirements define conflicting numeric limits, timing bounds, formulas, or incompatible units for the same system attribute or operation."
+        - "Different sections of the requirement set use different status codes/terms for the same concept or use the same term with conflicting meanings."
+      required_context:
+        - "requirement_set (minimum 2 requirements)"
+      optional_context:
+        - "domain_glossary"
+        - "data_dictionary"
+      standalone_assessable_when: "Directly assessable whenever 2 or more requirements are provided."
+      not_assessable_conditions:
+        - "Fewer than 2 requirements are provided."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quotes and locators/IDs of at least two requirements (r_i and r_j) in the set."
+        - "Explicit demonstration of why r_i and r_j cannot both hold simultaneously under the overlapping condition, or where terminology/units diverge."
+      scope_boundaries:
+        in_scope: "Contradictions and terminology/unit inconsistencies between requirements within the requirement set."
+        delegated_to_other_skills:
+          - "Self-contradiction inside a single requirement statement -> re.requirement-quality (RQ-03 / RQ-06)"
+          - "Conflict between a requirement and an external Stakeholder Need or Business Policy -> re.requirement-validation (RVAL-02, RVAL-04)"
+          - "Deep architectural, budget, or multi-attribute trade-off analysis -> fr.requirement-conflict-analysis"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-03"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-07"
+
+  - criterion_id: RSQ-04
+    statement: "Each requirement in the set must represent a unique obligation without verbatim duplication, paraphrased semantic duplication, or unacknowledged partial overlap across sections."
+    rationale: "Duplicate and overlapping requirements create maintenance hazards: when one copy is updated later and the duplicate is overlooked, the specification immediately becomes self-contradictory and inflates verification effort."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - interface-requirement-spec
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Consistent / non-redundant set)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Avoid duplication)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Consistent / Non-Redundant" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (Consistent / non-redundant set) and INCOSE GtWR v4."
+    synthesis_note: |
+      name: "Uniqueness & Freedom from Duplication"
+      evaluation_objective: "Ensure that obligations are stated once in a canonical location and referenced by ID when needed elsewhere, rather than duplicated verbatim or semantically."
+      pass_conditions:
+        - "Each requirement in the set specifies a distinct capability, constraint, or quality attribute."
+        - "High-level summary items and detailed child items are explicitly structured as parent-child hierarchy rather than peer duplicates."
+      issue_conditions:
+        - "Two or more peer requirements state the exact same obligation verbatim or via synonymous phrasing."
+        - "Two requirements partially overlap on the same obligation without cross-reference, creating ambiguity about whether they are additive or redundant."
+      required_context:
+        - "requirement_set (minimum 2 requirements)"
+      optional_context:
+        - "hierarchy_or_section_structure"
+      standalone_assessable_when: "Directly assessable whenever 2 or more requirements are provided."
+      not_assessable_conditions:
+        - "Fewer than 2 requirements are provided."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quotes and IDs/locators of all duplicated or overlapping requirements (r_i, r_j)."
+        - "Normalized comparison showing identical or overlapping (actor, trigger, action, target, constraint) tuples."
+      scope_boundaries:
+        in_scope: "Exact duplication, semantic duplication, and unacknowledged partial overlap between requirements in the set."
+        delegated_to_other_skills:
+          - "Multiple obligations bundled into a single compound requirement -> re.requirement-quality (RQ-05)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-04"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-08"
+
+  - criterion_id: RSQ-05
+    statement: "Inter-requirement dependencies, prerequisite capabilities, producer-consumer data flows, and internal cross-references within the requirement set must be coherent, satisfied, and free from circular deadlocks."
+    rationale: "Requirements rarely operate in isolation; if requirement B depends on an event, state, data entity, or prerequisite capability from requirement A, then A must exist in the set and produce compatible outputs without circular precondition deadlocks."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+      - interface-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Complete and Bounded set of requirements)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Complete" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Software Requirements Definition)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 5.2.6, ISO/IEC/IEEE 12207:2017 Clause 6.4.3, and INCOSE GtWR v4."
+    synthesis_note: |
+      name: "Inter-Requirement Dependency & Interface Coherence"
+      evaluation_objective: "Verify that internal cross-references, prerequisite states/events, and producer-consumer relationships among requirements within the set are satisfied and logically ordered."
+      pass_conditions:
+        - "Every internal requirement cross-reference (e.g., 'as defined in REQ-012') resolves to an existing requirement in the set whose content matches the reference."
+        - "Prerequisite states, events, or calculated outputs consumed by a requirement are produced by another requirement or declared external interface in the set."
+        - "Dependency chains between requirements in the set are acyclic."
+      issue_conditions:
+        - "A requirement references another requirement ID or rule within the same set that does not exist or governs an unrelated topic."
+        - "A requirement presupposes a system-generated state, score, or token that no requirement or external interface in the full set produces."
+        - "Two or more requirements form a circular precondition deadlock (e.g., REQ-A requires state S2 from REQ-B before executing, while REQ-B requires state S1 from REQ-A before executing)."
+      required_context:
+        - "requirement_set"
+      optional_context:
+        - "external_interface_catalog"
+      standalone_assessable_when: "Directly assessable for circular deadlocks and mismatched internal references within the provided set; missing producer checks require the full set or relevant module set."
+      not_assessable_conditions:
+        - "A requirement references an ID in another module that was not included in a partial requirement slice."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and ID of the dependent requirement(s) and the referenced/prerequisite target."
+        - "Demonstration of the broken internal reference, missing producer in the full set, or circular precondition chain."
+      scope_boundaries:
+        in_scope: "Dependencies, producer-consumer coherence, and cross-references AMONG requirements inside the requirement set."
+        delegated_to_other_skills:
+          - "Cross-layer traceability links between Requirements and Stakeholder Needs, Design, or Test Cases -> re.requirement-traceability (RTR-01 .. RTR-06)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-05"
+
+  - criterion_id: RSQ-06
+    statement: "The requirement set must be logically organized, accurately classified by requirement category, and structured at a coherent level of granularity without misclassified or structurally isolated requirements."
+    rationale: "A well-structured requirement set separates functional behaviors from quality attributes (NFRs), external interfaces, and design/project constraints so that architects, developers, and testers can locate all obligations governing a subsystem or quality dimension."
+    applies_to:
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+      - interface-requirement-spec
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Bounded & Structured set)" }
+      - { source_id: SRC-0004, locator: "Set Characteristics — Comprehensible & Structured" }
+    origin_note: "Synthesized from INCOSE GtWR v4 Set Characteristics (Comprehensible, Structured) and ISO/IEC/IEEE 29148:2018 Clause 5.2.6."
+    synthesis_note: |
+      name: "Set Organization, Classification & Granularity Coherence"
+      evaluation_objective: "Evaluate whether the requirement set is coherently grouped, accurately typed/classified, and free from severe abstraction mixing or unplaced orphan items within the specification structure."
+      pass_conditions:
+        - "Requirements are placed in sections or tagged with categories matching their substance (e.g., Functional vs. Non-Functional/Quality vs. Interface vs. Constraint)."
+        - "Peer requirements within the same section/level operate at a comparable level of abstraction."
+      issue_conditions:
+        - "System-wide non-functional requirements (e.g., availability, encryption, throughput) are buried inside unrelated functional feature sections or misclassified as functional steps, or vice versa."
+        - "Peer requirements in the same flat list mix ultra-high-level business visions with low-level field validation rules without hierarchy."
+        - "Requirements appear as unplaced fragments disconnected from any feature group, epic, or subsystem category in the set."
+      required_context:
+        - "requirement_set_with_section_or_category_metadata"
+      optional_context:
+        - "document_template_or_taxonomy"
+      standalone_assessable_when: "Assessable when the requirement set includes section headings, category tags, or hierarchy metadata."
+      not_assessable_conditions:
+        - "Requirements are provided as an unlabelled flat array stripped of section/category metadata."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "IDs, section/category labels, and quotes of the misclassified, abstraction-mismatched, or structurally unplaced requirements."
+      scope_boundaries:
+        in_scope: "Set-level taxonomy, classification accuracy, section grouping, and peer granularity coherence."
+        delegated_to_other_skills:
+          - "Whether a single requirement is at the right abstraction level for the artifact (e.g. premature SQL/UI design inside one requirement) -> re.requirement-quality (RQ-02)"
+          - "Whether a single requirement conforms to the sentence template -> re.requirement-quality (RQ-09)"
+          - "Whether a requirement lacks trace links to upstream needs or downstream tests -> re.requirement-traceability (RTR-06)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RSQ-GTC-09"
+        - "examples/golden-test-cases.yaml#RSQ-GTC-10"

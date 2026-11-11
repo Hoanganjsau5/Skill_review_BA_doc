@@ -1,0 +1,359 @@
+# Analysis & Comparison Rules — Skill: re.requirement-validation (Schema: schemas/definitions/analysis-rule.schema.json)
+# Operational rules RVAL-R001 .. RVAL-R010 mapped to criteria RVAL-01 .. RVAL-06.
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-validation
+  owner_version: 0.1.0
+
+rules:
+  - rule_id: RVAL-R001
+    rule_type: comparison
+    statement: "Compare the authoritative catalog of Stakeholder Needs against the full requirement set to detect any in-scope Stakeholder Need that has zero addressing requirements."
+    inputs:
+      - stakeholder_needs_baseline
+      - full_requirement_set
+    method: |
+      criterion_id: RVAL-01
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: need-to-requirement-coverage-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "vision-scope", "stakeholder-need-spec", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Check whether stakeholder_needs_baseline and full_requirement_set (completeness_mode: full) are provided; if either is missing or partial, mark RVAL-01 omission check as not_assessable."
+        - "2. Extract each distinct in-scope Stakeholder Need n_k from stakeholder_needs_baseline."
+        - "3. Search full_requirement_set for requirements that semantically address n_k (regardless of whether formal trace links exist)."
+        - "4. If an in-scope Stakeholder Need n_k has 0 addressing requirements in the full set, emit a high/critical Finding under RVAL-01."
+      evidence_expectations:
+        - "Exact quote and ID/locator of the unaddressed Stakeholder Need n_k."
+        - "Search summary confirming no requirement in full_requirement_set addresses n_k."
+      false_positive_considerations:
+        - "Do not flag Stakeholder Needs explicitly deferred to a future release in the baseline."
+        - "Do not flag when reviewing only a partial requirement slice (completeness_mode: partial)."
+      exceptions: []
+    rationale: "Ensures every in-scope stakeholder need is represented in the requirement specification (ISO/IEC/IEEE 29148:2018 Clause 6.4)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11" }
+      - { source_id: SRC-0006, locator: "Validation Process" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 6.4 (Requirements Validation)."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-01"
+        - "examples/golden-test-cases.yaml#RVAL-GTC-06"
+
+  - rule_id: RVAL-R002
+    rule_type: comparison
+    statement: "Compare multi-part Stakeholder Needs against their addressing requirements to detect partial or superficial satisfaction where essential aspects, personas, or outcomes of the need remain unaddressed."
+    inputs:
+      - stakeholder_needs_baseline
+      - requirements_set
+    method: |
+      criterion_id: RVAL-01
+      source_type: synthesized-method
+      normative_level: normative-standard
+      detection_approach: semantic-need-sufficiency-decomposition
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Decompose each Stakeholder Need n_k into its constituent sub-needs, target personas, and required outcomes."
+        - "2. Compare the addressing requirement(s) in requirements_set against all constituent parts of n_k."
+        - "3. Flag cases where the requirements cover only a fraction of n_k (e.g., Need requires both automated detection AND instant customer notification of suspicious card activity, while requirements specify only internal log recording)."
+      evidence_expectations:
+        - "Exact quote and ID of Stakeholder Need n_k."
+        - "Exact quote and ID of the addressing requirement(s), highlighting the specific sub-need or outcome left unfulfilled."
+      false_positive_considerations:
+        - "If the remaining sub-need is covered by another module not included in a partial slice, report as observation (insufficient_evidence)."
+      exceptions: []
+    rationale: "A trace link or single requirement is insufficient if it solves only half of the stakeholder's problem."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4 and NASA SP-2016-6105 Rev2 Section 4.2."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-01"
+
+  - rule_id: RVAL-R003
+    rule_type: comparison
+    statement: "Compare Stakeholder Needs against derived requirements to detect semantic distortion, contradictory outcomes, or silent narrowing of actors, channels, or service levels."
+    inputs:
+      - stakeholder_needs_baseline
+      - requirements_set
+    method: |
+      criterion_id: RVAL-02
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: semantic-intent-preservation-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Pair each requirement (or requirement cluster) with the Stakeholder Need(s) it claims or intends to satisfy."
+        - "2. Compare the actor, capability mode (e.g., self-service vs manual admin), channel, condition, and outcome between the Need and the Requirement."
+        - "3. Flag any requirement that distorts or reverses the stakeholder's intent or silently narrows eligibility without documented descoping approval."
+      evidence_expectations:
+        - "Exact quote and locator of the Stakeholder Need."
+        - "Exact quote and locator of the derived Requirement demonstrating the semantic distortion or silent restriction."
+      false_positive_considerations:
+        - "Documented and approved phase-scoping trade-offs (e.g., 'Release 1 restricts self-service to domestic orders per Architecture Decision X') are valid when explicitly recorded."
+      exceptions: []
+    rationale: "Prevents translation distortion between what stakeholders requested and what engineers build (ISO/IEC/IEEE 29148:2018 Clause 6.4)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition)" }
+      - { source_id: SRC-0004, locator: "Able to be Validated & Rationale" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 6.4 and NASA SP-2016-6105 Rev2 Section 4.2."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-02"
+
+  - rule_id: RVAL-R004
+    rule_type: comparison
+    statement: "Compare the criticality/priority assigned to Stakeholder Needs against the priority/mandatory status assigned to the corresponding requirements to detect unapproved priority inversions."
+    inputs:
+      - stakeholder_needs_baseline
+      - requirements_set
+    method: |
+      criterion_id: RVAL-02
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: priority-alignment-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Check whether priority/criticality attributes are present on both Stakeholder Needs and Requirements."
+        - "2. Identify cases where a Must-Have / Critical Stakeholder Need is mapped exclusively to Optional / Could-Have / Low-Priority requirements without a documented phasing rationale."
+      evidence_expectations:
+        - "Quote and priority attribute of the Stakeholder Need."
+        - "Quote and priority attribute of the mapped Requirement(s)."
+      false_positive_considerations:
+        - "Secondary nice-to-have enhancements derived from a Critical Stakeholder Need may legitimately have lower priority provided the core Must-Have capability is covered by high-priority requirements."
+      exceptions: []
+    rationale: "Downgrading all requirements for a critical stakeholder need to 'Optional/Could-Have' risks shipping a product missing core stakeholder value."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition)" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4 and NASA SP-2016-6105 Rev2 Section 4.2."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-02"
+
+  - rule_id: RVAL-R005
+    rule_type: comparison
+    statement: "Compare specified functional workflows, performance targets, and operational rules against declared Business/System Objectives and KPI targets to detect requirements that undermine or conflict with business goals."
+    inputs:
+      - business_or_system_objectives
+      - requirements_set
+    method: |
+      criterion_id: RVAL-03
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: objective-kpi-to-requirement-impact-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "vision-scope", "business-case", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract declared Business/System Objectives and quantitative KPI targets (e.g., target SLA, straight-through processing rate, conversion time, uptime)."
+        - "2. Compare requirement workflows, latencies, and approval gates against those targets."
+        - "3. Flag requirements whose mandated behavior or performance threshold makes achieving the business KPI impossible or directly works against the objective."
+      evidence_expectations:
+        - "Exact quote and locator of the Business/System Objective or KPI target."
+        - "Exact quote and locator of the requirement(s) that conflict with the objective."
+      false_positive_considerations:
+        - "Mandatory regulatory compliance steps (e.g., KYC checks) that add latency are valid constraints when backed by an authoritative regulatory policy."
+      exceptions: []
+    rationale: "Ensures technical specifications do not subvert strategic business objectives."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clauses 5.2 & 6.4."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-03"
+
+  - rule_id: RVAL-R006
+    rule_type: analysis
+    statement: "Analyze declared Business/System Objectives across the full requirement set to identify high-level objectives that have zero operationalizing functional or quality requirements."
+    inputs:
+      - business_or_system_objectives
+      - full_requirement_set
+    method: |
+      criterion_id: RVAL-03
+      source_type: synthesized-method
+      normative_level: engineering-best-practice
+      detection_approach: objective-operationalization-gap-analysis
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "vision-scope", "business-case", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Require completeness_mode: full and business_or_system_objectives."
+        - "2. Map each in-scope Business/System Objective to the requirements that operationalize or measure it."
+        - "3. Flag any Business/System Objective that remains a purely aspirational statement with 0 supporting requirements in the specification."
+      evidence_expectations:
+        - "Exact quote and ID/locator of the unoperationalized Business/System Objective."
+        - "Search summary over full_requirement_set."
+      false_positive_considerations:
+        - "Purely non-software organizational objectives (e.g., 'Hire 10 regional sales reps') that are explicitly outside the software system boundary."
+      exceptions: []
+    rationale: "Business objectives cannot be achieved by the system if no requirements operationalize them."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.4 and ISO/IEC/IEEE 12207:2017."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-03"
+
+  - rule_id: RVAL-R007
+    rule_type: comparison
+    statement: "Compare requirement rules, calculations, permissions, data retention rules, and workflows against authoritative Business Rules, Organizational Policies, and Regulatory Extracts to detect policy violations."
+    inputs:
+      - authoritative_policies_or_business_rules
+      - requirements_set
+    method: |
+      criterion_id: RVAL-04
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: policy-and-business-rule-compliance-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec", "system-requirement-spec", "regulatory-requirement-extract"]
+      evaluation_steps:
+        - "1. Check whether authoritative_policies_or_business_rules are provided; if absent, mark RVAL-04 as not_assessable."
+        - "2. Extract constraints, calculations, role segregation rules, and retention/privacy rules from the authoritative policy baseline."
+        - "3. Compare each requirement in requirements_set against applicable policy rules."
+        - "4. Flag any requirement that violates or permits bypassing an authoritative policy or business rule."
+      evidence_expectations:
+        - "Exact quote and ID/locator of the authoritative Policy / Business Rule."
+        - "Exact quote and ID/locator of the non-compliant Requirement."
+      false_positive_considerations:
+        - "Do not invent external legal/regulatory interpretations not grounded in the provided policy/regulatory baseline."
+      exceptions: []
+    rationale: "Ensures requirements conform to binding domain policies, business rules, and regulations (ISO/IEC/IEEE 29148:2018 Clause 6.4)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0005, locator: "Clauses 6.4.2 & 6.4.11" }
+      - { source_id: SRC-0006, locator: "Validation Process" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 6.4."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-04"
+
+  - rule_id: RVAL-R008
+    rule_type: comparison
+    statement: "Compare each requirement in the specification against the complete upstream baseline of Stakeholder Needs, Business Objectives, Authoritative Policies, and essential system enablement to detect unjustified requirements (gold-plating)."
+    inputs:
+      - full_upstream_validation_baseline
+      - requirements_set
+    method: |
+      criterion_id: RVAL-05
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: upstream-justification-and-gold-plating-check
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Verify that the full upstream baseline (needs, objectives, policies) is provided; if missing or partial, mark RVAL-05 as not_assessable."
+        - "2. For each requirement r_i in requirements_set, check whether r_i satisfies at least one upstream need, business objective, policy constraint, or essential architectural/operational enablement (e.g., authentication, logging, error recovery)."
+        - "3. If r_i introduces an unrequested functional feature or arbitrary restriction with no upstream justification, emit a Finding under RVAL-05."
+      evidence_expectations:
+        - "Exact quote and ID of the unjustified requirement r_i."
+        - "Verification against the provided upstream baseline showing no corresponding need, objective, or policy."
+      false_positive_considerations:
+        - "Standard defensive engineering, security controls, audit logging, and operational health checks are valid enabling requirements even when stakeholders do not explicitly ask for them in business prose."
+        - "Missing a formal trace link ID in a trace table when a matching stakeholder need actually exists in the BRD is a Traceability defect (RTR-01), NOT gold-plating (RVAL-05)."
+      exceptions:
+        - "Necessary technical/security enabling requirements."
+    rationale: "Prevents unrequested scope creep and gold-plating (ISO/IEC/IEEE 29148:2018 Clauses 5.2.5 & 6.4, NASA SP-2016-6105 Section 4.2)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Rationale & Necessity)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition)" }
+      - { source_id: SRC-0004, locator: "Able to be Validated & Rationale" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 and NASA SP-2016-6105 Rev2 Section 4.2."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-05"
+        - "examples/golden-test-cases.yaml#RVAL-GTC-07"
+
+  - rule_id: RVAL-R009
+    rule_type: comparison
+    statement: "Compare the specified requirements against declared Operational Concepts (ConOps), user journey workflows, and environmental constraints to detect operational mismatches or broken end-to-end user scenarios."
+    inputs:
+      - operational_scenarios_or_conops
+      - requirements_set
+    method: |
+      criterion_id: RVAL-06
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: conops-and-user-journey-walkthrough-comparison
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "brd", "prd", "vision-scope", "use-case-spec", "user-story-backlog", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Check whether operational_scenarios_or_conops (user journeys, ConOps, operating environment constraints) are provided; if absent, mark RVAL-06 as not_assessable."
+        - "2. Walk through each operational scenario step-by-step against the behaviors and preconditions mandated in requirements_set."
+        - "3. Flag requirements that assume environmental conditions contradicting the ConOps (e.g., requiring synchronous cloud connectivity during offline field inspections) or that block a required actor handoff."
+      evidence_expectations:
+        - "Exact quote and locator from the Operational Scenario / ConOps."
+        - "Exact quote and locator of the conflicting requirement(s)."
+      false_positive_considerations: []
+      exceptions: []
+    rationale: "Validates that the system as specified can actually be used effectively by target actors in their real operating environment (ISO/IEC/IEEE 15288:2023, ISO/IEC/IEEE 29148:2018 Clause 6.4)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Technical Requirements Definition)" }
+      - { source_id: SRC-0006, locator: "Validation Process" }
+    origin_note: "Derived from ISO/IEC/IEEE 29148:2018 Clause 6.4, ISO/IEC/IEEE 15288:2023, and NASA SP-2016-6105 Rev2 Section 4.2."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-08"
+
+  - rule_id: RVAL-R010
+    rule_type: analysis
+    statement: "Analyze the alignment between Stakeholder Needs/Operational Scenarios and specified Acceptance Criteria / validation conditions to detect scenarios lacking stakeholder-level validation criteria."
+    inputs:
+      - operational_scenarios_or_conops
+      - requirements_set
+    method: |
+      criterion_id: RVAL-06
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: stakeholder-acceptance-condition-analysis
+      applicable_languages: ["all"]
+      applicable_artifacts: ["brd", "prd", "use-case-spec", "user-story-backlog", "acceptance-criteria-spec"]
+      evaluation_steps:
+        - "1. Inspect operational scenarios and user stories/use cases in requirements_set."
+        - "2. Check whether stakeholder-visible acceptance outcomes are defined for critical business scenarios (or if acceptance criteria validate only low-level technical plumbing while ignoring the business outcome)."
+      evidence_expectations:
+        - "Quote of the operational scenario / user story and its acceptance criteria showing the missing business outcome validation."
+      false_positive_considerations:
+        - "Single-statement verifiability (whether one requirement sentence has measurable thresholds) belongs to re.requirement-quality (RQ-07)."
+      exceptions: []
+    rationale: "Supports INCOSE GtWR v4 'Able to be Validated' set property and ISO/IEC/IEEE 29148:2018 Clause 6.4."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.4 (Requirements Validation)" }
+      - { source_id: SRC-0004, locator: "Able to be Validated & Rationale" }
+    origin_note: "Synthesized from INCOSE GtWR v4 and ISO/IEC/IEEE 29148:2018 Clause 6.4."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RVAL-GTC-09"

@@ -1,0 +1,319 @@
+# Criteria — Skill: re.requirement-traceability (Schema: schemas/definitions/criterion.schema.json)
+# Evaluates structural traceability links across requirements and related lifecycle artifacts (RTR-01 .. RTR-06).
+
+owner:
+  owner_type: skill
+  owner_id: re.requirement-traceability
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: RTR-01
+    statement: "Every requirement in scope must have an explicit backward traceability link to its authoritative origin (business objective, stakeholder need, parent requirement, or regulatory source)."
+    rationale: "Backward traceability proves why each requirement exists in the trace graph and enables impact analysis when upstream objectives, needs, or regulations change (ISO/IEC/IEEE 29148:2018 Clause 6.5)."
+    applies_to:
+      - rtm
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Bidirectional Traceability)" }
+      - { source_id: SRC-0004, locator: "Traceability & Requirement Attributes" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Bidirectional Traceability)" }
+      - { source_id: SRC-0006, locator: "Traceability Across System Hierarchy Levels" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.5 (Requirements Traceability), ISO/IEC/IEEE 12207:2017 Clause 6.4.3, and NASA SP-2016-6105 Rev2 Section 4.2."
+    synthesis_note: |
+      name: "Backward Traceability Coverage"
+      evaluation_objective: "Verify that every active requirement records at least one explicit backward trace link to an upstream origin ID in the trace table or requirement attributes."
+      pass_conditions:
+        - "Every active requirement in scope has a recorded backward trace link (e.g., source_need_id, parent_req_id, objective_id, or RTM backward entry)."
+      issue_conditions:
+        - "An active requirement has an empty/missing backward trace link field in the RTM or requirement attribute schema."
+      required_context:
+        - "requirements_with_trace_attributes_or_rtm"
+      optional_context:
+        - "upstream_artifact_inventory"
+        - "declared_trace_model"
+      standalone_assessable_when: "Assessable whenever an RTM or requirement table with backward trace columns/attributes is provided (or when both upstream and requirement artifacts are provided and backward links are expected)."
+      not_assessable_conditions:
+        - "Requirements are provided as raw text without an RTM, trace attributes, or upstream artifact context."
+      not_applicable_conditions:
+        - "Top-level root business objectives that have no higher upstream artifact in the project trace model."
+      evidence_expectations:
+        - "Exact Requirement ID, locator, and RTM row/attribute excerpt showing the missing backward link."
+      scope_boundaries:
+        in_scope: "Presence of explicit structural backward trace links for each requirement (Link Coverage - Backward)."
+        delegated_to_other_skills:
+          - "Whether all Stakeholder Needs are semantically satisfied by requirements -> re.requirement-validation (RVAL-01)"
+          - "Whether an unlinked requirement is also semantically unjustified gold-plating -> re.requirement-validation (RVAL-05)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RTR-GTC-01"
+        - "examples/golden-test-cases.yaml#RTR-GTC-06"
+
+  - criterion_id: RTR-02
+    statement: "Every requirement in scope must have explicit forward traceability links to the downstream realization and verification artifacts required by the project's lifecycle stage (child requirements, Use Cases/User Stories/Acceptance Criteria, design elements, and Test Cases)."
+    rationale: "Forward traceability ensures that every specified requirement is decomposed, allocated to architecture/design, and verified by at least one test or verification case (ISO/IEC/IEEE 29148:2018 Clause 6.5)."
+    applies_to:
+      - rtm
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - architecture-design-doc
+      - test-plan-or-suite
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Verification & Traceability)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Bidirectional Traceability)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Bidirectional Traceability)" }
+      - { source_id: SRC-0006, locator: "Traceability Across System Hierarchy Levels" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.5, NASA SP-2016-6105 Rev2 Section 4.2 & Appendix C (Verification Matrix), and ISO/IEC/IEEE 12207:2017 Clause 6.4.3."
+    synthesis_note: |
+      name: "Forward Traceability Coverage"
+      evaluation_objective: "Verify that every active requirement records explicit forward trace links to all downstream layers expected in the declared trace model (decomposition, design, verification/test)."
+      pass_conditions:
+        - "Every active requirement has recorded forward trace links to each downstream artifact layer required for the current lifecycle phase."
+      issue_conditions:
+        - "An active requirement lacks a forward trace link to a required downstream layer (e.g., missing Test Case link in an RTM verification column, or parent requirement lacking child decomposition links)."
+      required_context:
+        - "requirements_with_trace_attributes_or_rtm"
+        - "declared_or_inferred_downstream_trace_layers"
+      optional_context:
+        - "downstream_artifact_inventories"
+      standalone_assessable_when: "Assessable whenever an RTM or requirement specification includes forward trace columns/attributes, or when both requirement and downstream artifacts are provided."
+      not_assessable_conditions:
+        - "No RTM, forward trace attributes, or downstream artifacts are provided."
+      not_applicable_conditions:
+        - "Downstream layers not yet applicable to an early-phase review (e.g., Design/Test links during initial Vision/BRD review)."
+      evidence_expectations:
+        - "Exact Requirement ID, locator, and RTM row/attribute excerpt showing the missing forward trace link."
+      scope_boundaries:
+        in_scope: "Presence of explicit structural forward trace links from requirements to downstream artifacts (Link Coverage - Forward)."
+        delegated_to_other_skills:
+          - "Whether a single requirement is worded in a verifiable/testable way -> re.requirement-quality (RQ-07)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RTR-GTC-01"
+        - "examples/golden-test-cases.yaml#RTR-GTC-08"
+
+  - criterion_id: RTR-03
+    statement: "Where traceability links are recorded in both forward and backward directions across tables or artifacts, the forward and backward mappings must be mutually symmetric and consistent."
+    rationale: "Asymmetric trace links (e.g., Requirement REQ-05 claims to be verified by TC-12, while Test Case TC-12 lists only REQ-02 as its covered requirement) corrupt impact analysis and coverage metrics."
+    applies_to:
+      - rtm
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - architecture-design-doc
+      - test-plan-or-suite
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Bidirectional Traceability)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Bidirectional Traceability)" }
+      - { source_id: SRC-0006, locator: "Traceability Across System Hierarchy Levels" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.5 (Bidirectional traceability) and ISO/IEC/IEEE 12207:2017 Clause 6.4.3."
+    synthesis_note: |
+      name: "Bidirectional Traceability Symmetry"
+      evaluation_objective: "Verify that every forward link (u -> d) has a matching backward link (d -> u) whenever both link directions are maintained."
+      pass_conditions:
+        - "For every linked pair (u, d), the forward link list on u and the backward link list on d agree symmetrically."
+      issue_conditions:
+        - "Artifact u lists d as a forward trace target, but artifact d's backward trace list omits u (or points to a different item), or vice versa."
+      required_context:
+        - "bidirectional_trace_records (either two trace tables or upstream + downstream artifacts both recording trace IDs)"
+      optional_context: []
+      standalone_assessable_when: "Assessable whenever trace links are recorded in both directions (e.g., forward & backward RTM tables, or trace attributes on both upstream and downstream items)."
+      not_assessable_conditions:
+        - "Trace links are recorded in only one single table/direction with no counterpart attribute to compare against."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and locator of the forward trace record on u."
+        - "Exact quote and locator of the backward trace record on d showing the asymmetry."
+      scope_boundaries:
+        in_scope: "Bidirectional symmetry between forward and backward trace records."
+        delegated_to_other_skills: []
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RTR-GTC-02"
+
+  - criterion_id: RTR-04
+    statement: "Every identifier and locator referenced in a traceability link must resolve to an existing, uniquely identified, and active (non-deprecated, non-deleted) artifact element."
+    rationale: "A trace matrix that appears 100% populated on paper provides false assurance if its links point to non-existent IDs (broken links), deleted/deprecated items, or ambiguous duplicate IDs."
+    applies_to:
+      - rtm
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - architecture-design-doc
+      - test-plan-or-suite
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Verification & Traceability)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Bidirectional Traceability)" }
+      - { source_id: SRC-0004, locator: "Traceability & Requirement Attributes" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.5, NASA SP-2016-6105 Rev2 Section 4.2, and INCOSE GtWR v4."
+    synthesis_note: |
+      name: "Reference & Identifier Integrity"
+      evaluation_objective: "Ensure all traced source and target IDs exist in their respective artifacts, are active (not deprecated/withdrawn), and have globally unique IDs within their namespace."
+      pass_conditions:
+        - "Every referenced ID in the RTM or trace attributes resolves to an existing, active item in the target artifact."
+        - "All traceable items have unique IDs without collision."
+      issue_conditions:
+        - "A trace link references a target ID (e.g., NEED-99, UC-404, TC-88) that does not exist in the target artifact inventory."
+        - "A trace link points to an item marked Deprecated, Deleted, Rejected, or Withdrawn."
+        - "Two different items share the exact same ID, making any trace link to that ID ambiguous."
+      required_context:
+        - "traceability_links"
+        - "target_artifact_inventory"
+      optional_context: []
+      standalone_assessable_when: "ID uniqueness is assessable within any single artifact/RTM; target ID existence and active status are assessable for all artifact layers included in the review package."
+      not_assessable_conditions:
+        - "Target artifact inventory for a referenced external layer is not provided in the review package."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and locator of the trace link containing the broken, deprecated, or collided ID."
+        - "Verification from the target artifact inventory showing the ID is absent, marked deprecated/deleted, or duplicated."
+      scope_boundaries:
+        in_scope: "Existence, active status, and identifier uniqueness of cross-layer traceability references."
+        delegated_to_other_skills:
+          - "Whether a single requirement's ID matches a regex naming convention -> re.requirement-quality (RQ-09)"
+          - "Horizontal cross-references between two requirements inside the same requirement prose -> re.requirement-set-quality (RSQ-05)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RTR-GTC-03"
+
+  - criterion_id: RTR-05
+    statement: "Each traceability link must represent a genuine, evidence-supported relationship (derivation, allocation, realization, or verification) between topically matching artifacts rather than a bogus or mismatched pairing."
+    rationale: "Authors frequently copy-paste RTM rows or link requirements to unrelated test/design IDs to pass automated non-empty cell checks. A link between 'Password Complexity Requirement' and 'Shipping Tax Test Case' is structurally present but functionally invalid."
+    applies_to:
+      - rtm
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - architecture-design-doc
+      - test-plan-or-suite
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability)" }
+      - { source_id: SRC-0002, locator: "Appendix C (Verification & Traceability)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Bidirectional Traceability)" }
+      - { source_id: SRC-0004, locator: "Traceability & Requirement Attributes" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.5, NASA SP-2016-6105 Rev2 Appendix C & Section 4.2, and INCOSE GtWR v4."
+    synthesis_note: |
+      name: "Relationship Relevance & Evidence Support"
+      evaluation_objective: "Verify that linked upstream and downstream items share a genuine topical and functional relationship (e.g., the linked Test Case actually tests the linked Requirement's subject, and the verification method matches)."
+      pass_conditions:
+        - "Linked items address the same domain entity, capability, or constraint appropriate to the link type (derives_from, allocated_to, verified_by)."
+        - "Verification links match the requirement's declared verification method (Inspection, Analysis, Demonstration, Test)."
+      issue_conditions:
+        - "A trace link connects two items that deal with completely unrelated capabilities or domain entities (bogus/copy-paste link)."
+        - "A requirement specifies verification method 'Test' (or quantitative performance SLA) but is linked only to a static document inspection checklist item (or vice versa)."
+      required_context:
+        - "traceability_links"
+        - "content_of_linked_source_and_target_items"
+      optional_context: []
+      standalone_assessable_when: "Assessable whenever the text/descriptions of both endpoints of a trace link are provided."
+      not_assessable_conditions:
+        - "Only bare IDs are provided in the RTM without the text/titles of the linked items."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact quote and ID of the source item."
+        - "Exact quote and ID of the linked target item, demonstrating that they govern unrelated subjects or incompatible verification types."
+      scope_boundaries:
+        in_scope: "Validating that a trace link connects topically related items and compatible verification methods."
+        delegated_to_other_skills:
+          - "Deep semantic validation of whether a requirement distorts stakeholder intent on the same topic -> re.requirement-validation (RVAL-02)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RTR-GTC-04"
+
+  - criterion_id: RTR-06
+    statement: "Within the declared traceability model, the artifact set must be free from cross-layer orphan requirements and unallocated downstream design, use case, or test elements that lack backward links to requirements."
+    rationale: "Orphan requirements (disconnected from both origins and downstream realization/verification) and unallocated downstream elements (design components or test cases with no parent requirement) indicate unverified requirements or unrequested implementation drift."
+    applies_to:
+      - rtm
+      - srs
+      - brd
+      - prd
+      - use-case-spec
+      - user-story-backlog
+      - acceptance-criteria-spec
+      - system-requirement-spec
+      - architecture-design-doc
+      - test-plan-or-suite
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (Bidirectional Traceability)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Bidirectional Traceability)" }
+      - { source_id: SRC-0006, locator: "Traceability Across System Hierarchy Levels" }
+    origin_note: "Synthesized from ISO/IEC/IEEE 29148:2018 Clause 6.5, ISO/IEC/IEEE 15288:2023, and NASA SP-2016-6105 Rev2 Section 4.2."
+    synthesis_note: |
+      name: "Orphan & Unallocated Element Freedom"
+      evaluation_objective: "Detect requirements that are completely omitted from the RTM / isolated from all trace layers, as well as downstream Use Cases, Design Elements, or Test Cases that do not trace back to any requirement."
+      pass_conditions:
+        - "Every active requirement in the specification appears in the traceability graph."
+        - "Every active downstream Use Case, Design Component, or Test Case in scope traces back to at least one requirement."
+      issue_conditions:
+        - "A requirement exists in the SRS/PRD but is completely omitted from the RTM and has neither backward nor forward links (cross-layer orphan)."
+        - "A downstream Use Case, Design Component, or Test Case exists in the downstream artifact but has no backward trace link to any requirement in the RTM or attributes."
+      required_context:
+        - "traceability_links_or_rtm"
+        - "full_artifact_inventories_for_compared_layers"
+      optional_context: []
+      standalone_assessable_when: "Assessable when the full inventory of requirements and/or downstream artifacts and the RTM are provided."
+      not_assessable_conditions:
+        - "Only a partial artifact slice is provided."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Exact ID and quote of the orphan requirement or unlinked downstream element."
+        - "Confirmation that the ID is absent from the RTM / trace links."
+      scope_boundaries:
+        in_scope: "Cross-layer orphan requirements omitted from the trace graph and unlinked downstream artifacts (Use Cases, Design, Tests)."
+        delegated_to_other_skills:
+          - "Structurally ungrouped or misclassified requirement sections within a single document -> re.requirement-set-quality (RSQ-06)"
+          - "Whether a requirement with no stakeholder justification is semantic gold-plating -> re.requirement-validation (RVAL-05)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#RTR-GTC-05"

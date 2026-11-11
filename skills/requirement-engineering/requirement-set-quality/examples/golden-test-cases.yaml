@@ -1,0 +1,252 @@
+# Golden Test Cases for `re.requirement-set-quality`
+# Covers positive, negative, missing-context, insufficient-evidence, false-positive prevention, and cross-skill boundary cases.
+
+suite_id: re.requirement-set-quality.golden-suite
+skill_id: re.requirement-set-quality
+skill_version: 0.1.0
+status_enum: [Compliant, Issue, Not Assessable, Not Applicable]
+
+test_cases:
+  - test_id: RSQ-GTC-01
+    scenario: "1. In-scope module and external interface declared in Scope section omitted from full requirement set (RSQ-01)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "Section 1.2 Scope: Release 1.0 includes (1) Subscription Plan Catalog, (2) Recurring Invoice Generation, and (3) Tax Authority Reporting Gateway."
+      requirement_set:
+        - { req_id: REQ-SUB-001, category: functional, section: "3.1", text: "The Billing Service shall allow Product Admins to create subscription plans with monthly or annual billing cycles." }
+        - { req_id: REQ-INV-001, category: functional, section: "3.2", text: "At 00:00 UTC daily, the Billing Service shall generate invoices for all active subscriptions whose renewal date equals the current date." }
+        - { req_id: REQ-INV-002, category: functional, section: "3.2", text: "When invoice generation fails due to missing customer billing address, the Billing Service shall set invoice status to FAILED_VALIDATION and emit event InvoiceGenerationFailed." }
+    expected_criterion_statuses:
+      RSQ-01: Issue
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings:
+      - criterion_id: RSQ-01
+        rule_ids: [RSQ-R001]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "Section 1.2 Scope declares '(3) Tax Authority Reporting Gateway' as in-scope for Release 1.0, but 0 requirements in the full set cover Tax Authority Reporting."
+    explanation: "Tests RSQ-01 / RSQ-R001 scope coverage gap when completeness_mode is full."
+
+  - test_id: RSQ-GTC-02
+    scenario: "2. Missing companion lifecycle transition for account lock state and deferred section in Vietnamese SRS (RSQ-02)"
+    language: vi
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "Mục 1.2 Phạm vi: Phân hệ Xác thực và Quản lý Phiên đăng nhập."
+      requirement_set:
+        - { req_id: REQ-AUTH-01, category: functional, section: "3.1", text: "Khi người dùng nhập sai mật khẩu 5 lần liên tiếp trong vòng 10 phút, hệ thống phải chuyển trạng thái tài khoản sang LOCKED và từ chối mọi yêu cầu đăng nhập." }
+        - { req_id: REQ-AUTH-02, category: functional, section: "3.1", text: "Khi tài khoản ở trạng thái ACTIVE, hệ thống phải cho phép người dùng đăng nhập bằng mật khẩu hợp lệ." }
+        - { req_id: SEC-SESSION-TBD, category: functional, section: "3.2", text: "Mục 3.2 Quản lý thu hồi phiên đăng nhập: TBD ở phiên bản sau." }
+    expected_criterion_statuses:
+      RSQ-01: Issue
+      RSQ-02: Issue
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings:
+      - criterion_id: RSQ-02
+        rule_ids: [RSQ-R002, RSQ-R003]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "REQ-AUTH-01 introduces state LOCKED with no companion requirement in the set defining how a LOCKED account is unlocked or expired; Section 3.2 is deferred as TBD at the set level."
+    explanation: "Tests RSQ-02 (RSQ-R002 missing state exit transition + RSQ-R003 whole-section TBD) in Vietnamese."
+
+  - test_id: RSQ-GTC-03
+    scenario: "3. Pairwise behavioral and numeric threshold contradiction plus terminology drift across sections (RSQ-03)"
+    language: en
+    artifact_type: prd
+    input_context:
+      completeness_mode: full
+      declared_scope: "Order Cancellation and Refund Processing."
+      requirement_set:
+        - { req_id: REQ-ORD-10, category: functional, section: "3.1", text: "A Customer shall be allowed to cancel any order in CONFIRMED status within 24 hours of placement with a 0% cancellation fee." }
+        - { req_id: REQ-REF-04, category: functional, section: "4.2", text: "When a Buyer cancels an order in CONFIRMED_ORDER status more than 2 hours after placement, the Refund Engine shall deduct a 15% cancellation fee." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Issue
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings:
+      - criterion_id: RSQ-03
+        rule_ids: [RSQ-R004, RSQ-R005, RSQ-R006]
+        type: conflict
+        severity: critical
+        confidence: high
+        evidence_excerpt: "REQ-ORD-10 permits 0% fee cancellation up to 24 hours after placement, whereas REQ-REF-04 mandates a 15% fee for cancellations more than 2 hours after placement (overlapping window 2h-24h), and drifts between 'Customer'/'Buyer' and 'CONFIRMED'/'CONFIRMED_ORDER'."
+    explanation: "Tests pairwise behavioral/numeric contradiction (RSQ-R004, RSQ-R005) and cross-set terminology drift (RSQ-R006)."
+
+  - test_id: RSQ-GTC-04
+    scenario: "4. Paraphrased semantic duplicate and divergent partial overlap across Agile User Stories (RSQ-04)"
+    language: en
+    artifact_type: user-story-backlog
+    input_context:
+      completeness_mode: full
+      declared_scope: "Security Audit Logging for Administrative Actions."
+      requirement_set:
+        - { req_id: US-101, category: functional, section: "Epic-Admin", text: "When an Administrator deletes a user account, the Audit Service shall record an audit log entry containing actor_id, target_user_id, action_type, and UTC timestamp." }
+        - { req_id: US-209, category: functional, section: "Epic-Security", text: "Every user account deletion performed by an Administrator shall be logged by the Audit Service with the administrator ID, deleted user ID, operation name, and timestamp in UTC." }
+        - { req_id: US-215, category: functional, section: "Epic-Compliance", text: "When an Administrator deletes a user account, the Audit Service shall record an audit log entry containing actor_id, source_ip, and UTC timestamp." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Issue
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings:
+      - criterion_id: RSQ-04
+        rule_ids: [RSQ-R007, RSQ-R008]
+        type: defect
+        severity: minor
+        confidence: high
+        evidence_excerpt: "US-101 and US-209 are paraphrased semantic duplicates; US-215 partially restates the same obligation with a divergent attribute list (adds source_ip, omits target_user_id and action_type)."
+    explanation: "Tests semantic duplication (RSQ-R007) and partial overlap with divergent restatement (RSQ-R008)."
+
+  - test_id: RSQ-GTC-05
+    scenario: "5. Circular precondition deadlock and broken internal requirement cross-reference (RSQ-05)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "Merchant Onboarding and KYB Verification."
+      requirement_set:
+        - { req_id: REQ-ONB-01, category: functional, section: "3.1", text: "The Onboarding Service shall create a Merchant Profile only after the KYB Verification status for that Merchant Profile is set to VERIFIED." }
+        - { req_id: REQ-ONB-02, category: functional, section: "3.1", text: "The KYB Service shall initiate KYB Verification only for an existing Merchant Profile in PENDING_KYB status." }
+        - { req_id: REQ-ONB-03, category: functional, section: "3.1", text: "When KYB Verification fails, the Onboarding Service shall apply the retry backoff schedule specified in REQ-ONB-99." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Issue
+      RSQ-06: Compliant
+    expected_findings:
+      - criterion_id: RSQ-05
+        rule_ids: [RSQ-R009]
+        type: defect
+        severity: major
+        confidence: high
+        evidence_excerpt: "Circular deadlock between REQ-ONB-01 (requires KYB status VERIFIED before creating Merchant Profile) and REQ-ONB-02 (requires existing Merchant Profile before initiating KYB Verification); dangling internal reference to non-existent REQ-ONB-99 in REQ-ONB-03."
+    explanation: "Tests intra-set circular precondition detection and dangling internal ID reference (RSQ-05 / RSQ-R009)."
+
+  - test_id: RSQ-GTC-06
+    scenario: "6. Partial requirement slice without Scope section — Safeguard against false-positive Scope/Companion gaps (Not Assessable)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: partial
+      declared_scope: null
+      requirement_set:
+        - { req_id: REQ-CART-01, category: functional, section: "3.4.1", text: "When a logged-in shopper adds an in-stock item to the cart, the Cart Service shall reserve the item quantity for 15 minutes." }
+        - { req_id: REQ-CART-02, category: functional, section: "3.4.1", text: "When a logged-in shopper removes an item from the cart, the Cart Service shall release the reserved item quantity immediately." }
+    expected_criterion_statuses:
+      RSQ-01: Not Assessable
+      RSQ-02: Not Assessable
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings: []
+    explanation: "Because declared_scope is absent and completeness_mode is partial, RSQ-01 and RSQ-02 are marked Not Assessable rather than generating false-positive gap findings."
+
+  - test_id: RSQ-GTC-07
+    scenario: "7. False-positive prevention — General rule with explicit exception cross-reference and tier-specific thresholds (Compliant)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "API Rate Limiting for Standard and Enterprise Tiers."
+      requirement_set:
+        - { req_id: REQ-RL-01, category: functional, section: "3.1", text: "Except as specified in REQ-RL-02 for Enterprise Tier tenants, the API Gateway shall reject client requests exceeding 100 requests per minute with HTTP 429." }
+        - { req_id: REQ-RL-02, category: functional, section: "3.1", text: "For Enterprise Tier tenants, the API Gateway shall reject client requests exceeding 2,000 requests per minute with HTTP 429." }
+        - { req_id: REQ-RL-03, category: functional, section: "3.1", text: "When the API Gateway returns HTTP 429, the response shall include header Retry-After indicating the seconds until the current 60-second window resets." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings: []
+    explanation: "REQ-RL-01 and REQ-RL-02 have different numeric limits (100 vs 2,000 rpm) but govern mutually exclusive tiers with an explicit exception cross-reference. Zero false positives."
+
+  - test_id: RSQ-GTC-08
+    scenario: "8. False-positive prevention — Parent summary requirement and explicitly linked child requirements (Compliant on RSQ-04)"
+    language: vi
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "Phân hệ Xuất Báo cáo Tài chính (Định dạng PDF và CSV)."
+      requirement_set:
+        - { req_id: REQ-RPT-00, parent_id: null, category: functional, section: "3.1 Tổng quan", text: "Hệ thống phải hỗ trợ Kế toán viên xuất Báo cáo Doanh thu Tháng theo các định dạng chi tiết tại REQ-RPT-01 và REQ-RPT-02." }
+        - { req_id: REQ-RPT-01, parent_id: REQ-RPT-00, category: functional, section: "3.1.1 Chi tiết", text: "Khi Kế toán viên chọn xuất PDF, hệ thống phải tạo tệp PDF chuẩn A4 có chữ ký số trong vòng 5 giây." }
+        - { req_id: REQ-RPT-02, parent_id: REQ-RPT-00, category: functional, section: "3.1.2 Chi tiết", text: "Khi Kế toán viên chọn xuất CSV, hệ thống phải tạo tệp CSV mã hóa UTF-8 trong vòng 3 giây." }
+        - { req_id: REQ-RPT-03, parent_id: REQ-RPT-00, category: functional, section: "3.1.3 Xử lý lỗi", text: "Nếu kỳ báo cáo chưa khóa sổ, hệ thống phải từ chối yêu cầu xuất báo cáo và hiển thị mã lỗi ERR_PERIOD_OPEN." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings: []
+    explanation: "Explicit parent-child decomposition (REQ-RPT-00 -> REQ-RPT-01, REQ-RPT-02) is coherent hierarchy, not duplication."
+
+  - test_id: RSQ-GTC-09
+    scenario: "9. Misclassified global NFRs buried as functional steps and extreme peer granularity mixing (RSQ-06)"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "Password Reset Feature."
+      requirement_set:
+        - { req_id: REQ-PWD-01, category: functional, section: "3.1 Functional Requirements - Password Reset", text: "When a user submits a registered email address on the Forgot Password form, the Auth Service shall send a single-use reset token expiring in 15 minutes." }
+        - { req_id: REQ-PWD-02, category: functional, section: "3.1 Functional Requirements - Password Reset", text: "When a user submits a valid reset token and a new password meeting complexity rules, the Auth Service shall update the password hash and invalidate the token." }
+        - { req_id: REQ-PWD-03, category: functional, section: "3.1 Functional Requirements - Password Reset", text: "The entire cloud platform across all microservices shall maintain 99.99% annual availability and encrypt all database volumes using AES-256." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Issue
+    expected_findings:
+      - criterion_id: RSQ-06
+        rule_ids: [RSQ-R010]
+        type: defect
+        severity: minor
+        confidence: high
+        evidence_excerpt: "REQ-PWD-03 is a system-wide availability and infrastructure encryption NFR misclassified as a Functional Requirement inside Section 3.1 Password Reset."
+    explanation: "Tests RSQ-06 / RSQ-R010 detection of misclassified global NFRs and peer granularity mixing."
+
+  - test_id: RSQ-GTC-10
+    scenario: "10. Strict ownership boundary — Single-statement ambiguity (RQ-03) is NOT double-reported as a Set Quality defect"
+    language: en
+    artifact_type: srs
+    input_context:
+      completeness_mode: full
+      declared_scope: "Notification Dispatch."
+      requirement_set:
+        - { req_id: REQ-NOTIF-01, category: functional, section: "3.1", text: "When an order is shipped, the Notification Service shall quickly send an email notification to the customer." }
+        - { req_id: REQ-NOTIF-02, category: functional, section: "3.1", text: "When email delivery fails after 3 retries, the Notification Service shall mark the notification status as DELIVERY_FAILED." }
+    expected_criterion_statuses:
+      RSQ-01: Compliant
+      RSQ-02: Compliant
+      RSQ-03: Compliant
+      RSQ-04: Compliant
+      RSQ-05: Compliant
+      RSQ-06: Compliant
+    expected_findings: []
+    explanation: "The vague adverb 'quickly' inside REQ-NOTIF-01 is a single-statement ambiguity/verifiability defect owned exclusively by re.requirement-quality (RQ-03 / RQ-07). At the set level (RSQ-01..06), scope is covered, failure counterpart exists, and there are no inter-requirement contradictions or duplicates."

@@ -1,0 +1,195 @@
+# English Language Pack for `re.requirement-quality`
+# All patterns below are HEURISTIC DETECTION SIGNALS, not automatic violations.
+
+language_pack_id: re.requirement-quality.lang.en
+language_code: en
+language_name: English
+version: 0.1.0
+applies_to_skill:
+  skill_id: re.requirement-quality
+  version_range: "^0.1.0"
+
+usage_policy: >
+  Expressions in this pack are detection signals only. An Agent must inspect the full sentence,
+  parenthetical bounds, linked acceptance criteria, and project glossary before reporting an Issue.
+  Never fail a requirement solely because a word in this file appears in the text.
+
+signal_categories:
+  vague_qualitative_terms:
+    related_criteria: [RQ-03, RQ-07]
+    related_rules: [RQ-R003, RQ-R012]
+    signals:
+      - fast
+      - rapid
+      - quickly
+      - timely
+      - real-time
+      - instantaneous
+      - easy
+      - easily
+      - simple
+      - user-friendly
+      - intuitive
+      - seamless
+      - adequate
+      - sufficient
+      - appropriate
+      - reasonable
+      - robust
+      - flexible
+      - scalable
+      - efficient
+      - optimal
+      - minimal
+      - maximize
+      - minimize
+      - state-of-the-art
+    contextual_check: >
+      Verify whether the qualitative term is immediately bounded by a measurable threshold,
+      enumerated set of behaviors, or glossary definition. If bounded, the statement is Compliant.
+
+  imprecise_quantifiers:
+    related_criteria: [RQ-03, RQ-04, RQ-07]
+    related_rules: [RQ-R003]
+    signals:
+      - several
+      - many
+      - few
+      - some
+      - most
+      - approximately
+      - nearly
+      - up to
+      - at least (when upper bound is required for capacity/sizing)
+      - a large number of
+      - normal load
+      - peak load (when undefined in context)
+    contextual_check: >
+      Check whether the quantifier is defined in the NFR workload profile or glossary.
+
+  open_ended_clauses_and_placeholders:
+    related_criteria: [RQ-04]
+    related_rules: [RQ-R008]
+    signals:
+      - etc.
+      - and so on
+      - and so forth
+      - including but not limited to
+      - such as (when used as the sole definition of a normative set without an exhaustive list)
+      - TBD
+      - TBC
+      - TODO
+      - to be determined
+      - to be defined
+    contextual_check: >
+      Flag when the open-ended phrase leaves the normative obligation unbounded. Do not flag
+      illustrative examples ("e.g., ...") when the normative rule itself is already closed and complete.
+
+  ambiguous_combinators:
+    related_criteria: [RQ-03, RQ-05]
+    related_rules: [RQ-R005]
+    signals:
+      - and/or
+      - "/"
+      - "A and B or C"
+      - "A or B and C"
+    contextual_check: >
+      Check whether the boolean grouping is unambiguous. Ignore slashes inside technical tokens
+      (e.g., HTTP/2, TCP/IP, CI/CD, I/O, read/write lock name, units like req/s).
+
+  escape_clauses:
+    related_criteria: [RQ-03, RQ-04, RQ-07]
+    related_rules: [RQ-R006]
+    signals:
+      - as appropriate
+      - if possible
+      - when necessary
+      - where practical
+      - if applicable
+      - as required
+      - to the extent practicable
+      - if feasible
+    contextual_check: >
+      If the condition is explicitly specified (e.g., "where required by GDPR Article 17"), it is not an escape clause.
+
+  pronoun_and_reference_patterns:
+    related_criteria: [RQ-03]
+    related_rules: [RQ-R004]
+    signals:
+      - it
+      - they
+      - them
+      - its
+      - their
+      - this
+      - that
+      - these
+      - those
+      - the above
+      - the former
+      - the latter
+    contextual_check: >
+      Only flag when two or more preceding noun phrases could plausibly serve as the antecedent,
+      or when "the above" could refer to multiple statements.
+
+  compound_obligation_markers:
+    related_criteria: [RQ-05]
+    related_rules: [RQ-R009]
+    signals:
+      - "shall ... and shall ..."
+      - "must ... and must ..."
+      - "shall ... and also ..."
+      - "shall ... as well as ..."
+      - "shall ...; additionally, ..."
+    contextual_check: >
+      Check whether the conjoined predicates represent independent capabilities/obligations that can be
+      verified separately, or a single atomic action/payload.
+
+grammatical_considerations:
+  - id: EN-GRAM-01
+    topic: "Agentless passive voice"
+    related_criteria: [RQ-04]
+    guidance: >
+      Passive constructions ("The order shall be validated") hide the responsible actor/subsystem
+      when multiple components interact. Flag under RQ-04 only if the responsible actor cannot be
+      unambiguously determined from the statement or enclosing section.
+  - id: EN-GRAM-02
+    topic: "Modal verbs and project conventions"
+    related_criteria: [RQ-09]
+    guidance: >
+      English requirements may use "shall", "must", "will", or User Story phrasing ("As a ... I want ...").
+      Do NOT require "shall" unless the project's convention in `project-context` / `review-config` explicitly mandates it.
+  - id: EN-GRAM-03
+    topic: "Negative requirements"
+    related_criteria: [RQ-03, RQ-07]
+    guidance: >
+      Universal negative statements ("The system shall never lose data under any condition") are often
+      unverifiable (`RQ-07`) unless scoped to defined failure modes or interfaces.
+
+representation_patterns:
+  user_story:
+    pattern: "As a <role>, I want <goal/capability>, so that <benefit/rationale>."
+    notes: "Evaluated under RQ-R015 when artifact_type or item format is User Story."
+  ears:
+    ubiquitous: "The <system name> shall <system response>."
+    event_driven: "WHEN <trigger>, the <system name> shall <system response>."
+    state_driven: "WHILE <state>, the <system name> shall <system response>."
+    unwanted_behavior: "IF <unwanted condition>, THEN the <system name> shall <system response>."
+    optional_feature: "WHERE <feature is included>, the <system name> shall <system response>."
+
+false_positive_warnings:
+  - "Do NOT flag 'fast' or 'real-time' when immediately followed by an explicit quantitative bound or SLA reference."
+  - "Do NOT flag 'and' when it connects fields of a single record, coupled conditions of one event trigger, or endpoints of a range ('between 1 and 10')."
+  - "Do NOT flag technical slash terms ('TCP/IP', 'HTTP/1.1', 'UTF-8/ASCII', 'req/s')."
+  - "Do NOT flag 'it' when there is only one singular noun in the preceding clause."
+
+examples:
+  compliant:
+    - statement: "When a customer submits a payment request, the Payment Gateway shall return a transaction status code within 2.0 seconds for 95% of requests under a load of 500 requests/second."
+      why: "Actor, trigger, response, and quantitative bounds are explicit; 'requests/second' uses '/' as a unit, not an ambiguous combinator."
+    - statement: "The Audit Service shall record the `actor_id`, `action_type`, and `utc_timestamp` for every administrative role change."
+      why: "Uses 'and' to list fields of a single atomic audit record; Singular (RQ-05) and Verifiable (RQ-07) without needing a latency metric."
+  problematic:
+    - statement: "The portal shall quickly process user uploads and/or notify the administrator as appropriate, etc."
+      signals_triggered: ["quickly", "and/or", "as appropriate", "etc."]
+      why: "Unbounded adverb 'quickly' (RQ-03, RQ-07), ambiguous combinator 'and/or' (RQ-03, RQ-05), escape clause 'as appropriate' (RQ-03, RQ-04), and open-ended 'etc.' (RQ-04)."
