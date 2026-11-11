@@ -1,0 +1,413 @@
+# Analysis & Comparison Rules — Skill: re.srs-review (Schema: schemas/definitions/analysis-rule.schema.json)
+# Operational rules SRV-R001 .. SRV-R011 mapped to criteria SRV-01 .. SRV-08.
+# Executed primarily by artifact-reviewer (single SRS) and cross-artifact-analyzer (SRS vs review corpus).
+
+owner:
+  owner_type: skill
+  owner_id: re.srs-review
+  owner_version: 0.1.0
+
+rules:
+  - rule_id: SRV-R001
+    rule_type: analysis
+    statement: "Extract the full heading tree of the SRS and compare it against the adopted outline baseline (project template, else the recognized standard SRS outline): flag every mandated top-level or second-level section that is absent or present only as a heading with no substantive body."
+    inputs:
+      - full_srs_document
+      - adopted_template_or_declared_outline
+    method: |
+      criterion_id: SRV-01
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: section-inventory-skeleton-diff
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Verify document_completeness_mode: full; if partial, mark SRV-01 not_assessable (slice cannot prove absence elsewhere)."
+        - "2. Extract the heading tree (numbers, titles, locators) and body-size metadata per section."
+        - "3. Establish the outline baseline: project template if supplied; otherwise the recognized standard outline — record this as an assumption in review metadata."
+        - "4. Diff baseline vs. actual: report absent mandatory sections; report heading-only sections (empty/trivial body) as non-empty violations unless a tailoring declaration covers them."
+        - "5. Do not judge CONTENT quality of any section here — only structural existence and non-emptiness."
+      evidence_expectations:
+        - "Baseline list used (template entry or recorded standard-outline assumption)."
+        - "Actual section inventory excerpt with locators showing the absent/empty mandatory section."
+      false_positive_considerations:
+        - "A section named differently but unambiguously fulfilling the baseline role ('Giới thiệu tổng quan' for Introduction) passes — match by role, not exact wording."
+        - "A short but complete section (3 sentences of real constraints) is NOT 'heading-only' — non-emptiness means substantive content for its role, not a length quota."
+        - "Explicit tailoring declarations ('not applicable — rationale') convert absence into Compliant (see SRV-GTC-05)."
+      exceptions:
+        - "Sections the adopted template marks optional and the document tailors out with rationale."
+    rationale: "Section absence is structurally upstream of every content defect: a missing Constraints or Assumptions region prevents entire obligation classes from ever existing (SRC-0010 outline; SRC-0005 Clause 6.4.3 documentation expectation)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Recommended SRS outline — 1 Introduction / 2 Overall Description / 3 Specific Requirements (outline-level recall only)" }
+      - { source_id: SRC-0011, locator: "SRS content elements (memory-based recall)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Software Requirements Definition — specification output, process level)" }
+    origin_note: "Derived from the chapter-level outline of IEEE Std 830-1998 (SRC-0010, recalled at outline level only — superseded standard, see registry access note) and Wiegers & Gilbert SRS elements (SRC-0011, memory-based)."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-01"
+        - "examples/golden-test-cases.yaml#SRV-GTC-04"
+
+  - rule_id: SRV-R002
+    rule_type: analysis
+    statement: "Inspect the document front matter for a document identifier, a version designation, and a revision history; verify the revision history is present, internally agrees with the declared current version, and carries dated entries with author and change description for published revisions."
+    inputs:
+      - full_srs_document_or_front_matter
+      - declared_version_designation
+    method: |
+      criterion_id: SRV-02
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: front-matter-document-control-scan
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Locate title block, version field, and revision-history table."
+        - "2. Verify latest revision row matches the declared current version; flag divergence."
+        - "3. Verify entries carry version/date/author/description (missing columns are a partial defect, report severity downgraded to info when only metadata is thin but history exists)."
+        - "4. Approval fields required by the template: present-and-pending passes; absent fails."
+      evidence_expectations:
+        - "Locator + excerpt of the version block and of the revision-history table (or its confirmed absence)."
+      false_positive_considerations:
+        - "Git/wiki-managed documents that legitimately record history outside the file body pass when the document points to the external history location."
+        - "v0.x exploratory drafts explicitly declared outside document control are not_applicable, not Issue."
+      exceptions:
+        - "Projects whose template declares no in-document revision history (external ALM holds it) — pointer required."
+    rationale: "Version/revision context determines which content is authoritative and which prior reviews still apply (SRC-0011 practical SRS elements)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "Title page/document identification and revision history practice (memory-based recall)" }
+      - { source_id: SRC-0010, locator: "Recommended SRS structure front matter (outline-level recall only)" }
+    origin_note: "Derived from Wiegers & Gilbert's practical SRS elements (SRC-0011, memory-based) and the front-matter practice of the SRC-0010 recommended structure."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-02"
+        - "examples/golden-test-cases.yaml#SRV-GTC-10"
+
+  - rule_id: SRV-R003
+    rule_type: comparison
+    statement: "Reconcile the table of contents against the actual heading tree: every TOC entry must match an existing heading (number and title, modulo declared ellipsis conventions) and every mandatory heading must appear in the TOC; flag mismatched numbers/titles and stale entries."
+    inputs:
+      - toc_entries
+      - actual_heading_tree
+    method: |
+      criterion_id: SRV-03
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: toc-heading-two-list-reconciliation
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Parse TOC list (number, title, locator) and the body heading list."
+        - "2. Join on section number; flag number-present-title-different (stale TOC) and title-present-number-different (renumbered body)."
+        - "3. Flag TOC entries with no body heading (deleted without TOC update) and mandatory body headings missing from TOC."
+        - "4. Emit as comparison finding: both excerpts required."
+      evidence_expectations:
+        - "Two-part evidence: TOC entry excerpt+locator AND actual heading excerpt (or absence proof from the full heading inventory)."
+      false_positive_considerations:
+        - "Auto-generated TOC fields pending refresh in a Word export are still Issues for a BASELINED document (readers navigate the stale TOC), but severity minor; note the generation mechanism in rationale."
+        - "Deliberate TOC depth limits (only levels 1–2 listed) declared by the template are not mismatches."
+      exceptions:
+        - "Documents without a TOC by template: rule not applicable."
+    rationale: "Stale TOC entries route readers to wrong or nonexistent content and are the first symptom of un-synchronized document rework (SRC-0011 maintainability/consistency practice)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "Consistent, maintainable SRS structure (memory-based recall)" }
+    origin_note: "Operationalized document-engineering practice attributed to SRC-0011 guidance; numbering convention context from SRC-0010 outline."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-02"
+
+  - rule_id: SRV-R004
+    rule_type: analysis
+    statement: "Extract every internal reference in the document body (section/subsection 'see' references, figure/table/appendix references) and verify each resolves to an existing element whose subject matches the reference context."
+    inputs:
+      - full_srs_document
+    method: |
+      criterion_id: SRV-03
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: intra-document-reference-resolution
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Collect reference phrases in all languages: 'see Section x.y', 'Xem Mục 3.4', 'as shown in Figure n', 'per Appendix X'."
+        - "2. Resolve each against the heading/element inventory; flag unresolved."
+        - "3. For resolved targets, sanity-check subject match against the referencing sentence (a payment reference landing on a notification section is an issue even if the number exists)."
+        - "4. References to OTHER documents (REQ-ids, ICD files) are out of this rule's scope: they route to SRV-R008 (reference apparatus) or re.requirement-traceability (trace targets)."
+      evidence_expectations:
+        - "Reference excerpt+locator and the target inventory excerpt (or absence confirmation)."
+      false_positive_considerations:
+        - "Cross-layer requirement IDs inside an RTM column are trace links, not internal references (do not double-report under SRV-R004; RTR-04 owns them)."
+      exceptions: []
+    rationale: "Dangling intra-document references create contractual ambiguity: two readers bind to two different clauses (SRC-0011 consistency practice)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "Internal consistency and reference integrity of a well-formed SRS (memory-based recall)" }
+    origin_note: "Derived from SRC-0011 maintainability guidance; the resolution algorithm is this skill's operationalization."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-02"
+
+  - rule_id: SRV-R005
+    rule_type: analysis
+    statement: "Audit the Specific Requirements region for a structural home per mandated requirement class — external interfaces (user, hardware, software, communications), non-functional/performance requirements, system feature groups, and data description — flagging any class with no section, no cross-reference, and no explicit tailoring/not-applicable declaration."
+    inputs:
+      - full_srs_document
+      - tailoring_declaration
+    method: |
+      criterion_id: SRV-04
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: requirement-class-section-coverage-audit
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Confirm document_completeness_mode: full."
+        - "2. For each class in [User Interfaces, Hardware Interfaces, Software Interfaces, Communications Interfaces, Non-functional/Performance, System Features, Data description]: search the section inventory for a dedicated or embedded-but-labeled region, or a pointer to a named external artifact."
+        - "3. For classes with no region, check tailoring/assumptions statements for an explicit not-applicable declaration with rationale; declaration present -> Compliant; silent absence -> Issue."
+        - "4. Judge only existence/pointing of the home, never the quality of interface statements inside it (RQ owns that)."
+      evidence_expectations:
+        - "Full heading inventory excerpt demonstrating the missing class region."
+        - "When external-systems make a class obviously applicable (e.g., documented third-party payment gateway), cite that context excerpt."
+      false_positive_considerations:
+        - "Interface requirements embedded under each feature section instead of a dedicated 3.1 block: Compliant if every applicable class is still locatable and labeled (structure may vary by template)."
+        - "'No hardware/communications interfaces — pure web product' declared in §1.2/§2.4/assumptions: Compliant (false-positive prevention, SRV-GTC-05)."
+      exceptions:
+        - "Templates that fold NFRs into feature sections by design, when the fold is declared."
+    rationale: "The standard outline assigns interface classes, performance, features, and data dedicated placement precisely so omissions become visible review decisions (SRC-0010 Chapter 3 outline-level subsections)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Chapter 3 Specific Requirements — External Interfaces (user, hardware, software, communications), performance, system features, data (outline-level recall only)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (bounded, comprehensible set — conceptual level, as phrased in the registry)" }
+    origin_note: "Derived from the outline-level subsection taxonomy of IEEE Std 830-1998 Chapter 3 (SRC-0010; superseded standard, recall limited to section names) and the comprehensible-set concept of SRC-0001 Clause 5.2.6."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-01"
+        - "examples/golden-test-cases.yaml#SRV-GTC-05"
+
+  - rule_id: SRV-R006
+    rule_type: comparison
+    statement: "Compare the declared product-functions/feature overview (Overall Description) against the feature subsections of the Specific Requirements region: every declared feature must have a structural home (or recorded allocation decision), and every feature section must map back to a declared feature."
+    inputs:
+      - feature_overview_list
+      - specific_requirements_section_inventory
+    method: |
+      criterion_id: SRV-05
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: feature-list-to-section-bijection-check
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract the declared feature list from the Overall Description (function summary/table) with identifiers or names."
+        - "2. Extract feature sections of the Specific Requirements region."
+        - "3. Two-way set reconciliation: overview-entry without section (missing allocation OR deliberate deferral — check for a note); section without overview-entry (undeclared feature — structural orphan)."
+        - "4. Order correspondence (features in declared priority order) is an info-level observation, never an Issue."
+      evidence_expectations:
+        - "Two-part evidence: overview list entry excerpt+locator AND section heading excerpt+locator (or absence proof over the full inventory)."
+      false_positive_considerations:
+        - "A feature covered by several sub-features under one section heading passes (mapping need not be 1:1, only total)."
+        - "Zero-requirement feature sections are NOT this rule's defect: they are SRV-01/SRV-07 (empty) or RSQ-02 (companion completeness) concerns; here the check is the existence of the structural home only."
+      exceptions:
+        - "Documents without a feature overview section: rule not applicable (SRV-01 first decides whether the overview is mandatory here)."
+    rationale: "Feature-organization correspondence is the structural backbone readers use for coverage; breaks here hide entire feature regions from review (SRC-0010 outline convention 2.2->3.x; SRC-0011 organizing by feature)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Chapter 2 product-functions to Chapter 3 system-features correspondence convention (outline-level recall only)" }
+      - { source_id: SRC-0011, locator: "Organizing an SRS by feature (memory-based recall)" }
+    origin_note: "Operationalizes the outline-level 2.2-functions/3.x-features convention of SRC-0010 (names recalled at outline level only) and SRC-0011's feature-based organization practice."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-10"
+
+  - rule_id: SRV-R007
+    rule_type: analysis
+    statement: "Detect the document's own declared requirement-identifier scheme (conventions section, template, or de-facto uniform pattern) and scan all requirement-bearing sections for identifiers that are absent, malformed against the declared pattern, or use undeclared prefixes in the wrong region."
+    inputs:
+      - full_srs_document
+      - declared_id_scheme_or_conventions
+    method: |
+      criterion_id: SRV-05
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: declared-scheme-conformity-scan
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Find the declared scheme ('FR-nn functional, NFR-nn non-functional', numbering rules in a conventions section or the project template)."
+        - "2. If no declaration exists anywhere, do not invent one: report the absence of a declared scheme as an SRV-05 observation (minor) and skip conformity scanning."
+        - "3. Scan identifiers in all sections: prefix/pattern mismatch (functional items numbered under the wrong family) and sequence discontinuities without recorded renumbering notes."
+        - "4. Duplicate-ID collisions as TRACE endpoints belong to re.requirement-traceability (RTR-04); here report only scheme-conformity and cross-section usage uniformity."
+      evidence_expectations:
+        - "Excerpt+locator of the declared scheme and excerpts+locators of violating instances (one per class, count in rationale)."
+      false_positive_considerations:
+        - "Per-section prefixes declared in the scheme (FR-301 in §3.1 vs FR-4xx in §3.4) are valid; judge against the declared scheme, not a guessed one."
+        - "User Stories 'as a…, I want…' items in an agile annex without IDs: out of scope (artifact mismatch), not flagged."
+      exceptions:
+        - "Legacy documents with an explicitly frozen ID pool (documented reservations/gaps pass)."
+    rationale: "The document's own declared scheme is the join key for coverage, impact, and allocation; drift makes whole regions undiscoverable and corrupts every keyed metric (SRC-0011 consistent identification)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "Consistent requirement identification and numbering practice (memory-based recall)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (comprehensible, organized set — conceptual level)" }
+    origin_note: "Conformity is measured against the PROJECT'S OWN declared scheme — deliberately NOT reusing RQ-09 (per-statement template conformance); the document-wide uniform-usage scope is this skill's operationalization per SRC-0011."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-08"
+        - "examples/golden-test-cases.yaml#SRV-GTC-10"
+
+  - rule_id: SRV-R008
+    rule_type: comparison
+    statement: "Compare every entry of the SRS References/footnote apparatus that the document uses normatively against the review-corpus inventory; flag entries that cannot be resolved as existing, identified documents in the corpus. THIS IS A TWO-ARTIFACT RULE: a confirmed Issue finding MUST carry (1) the reference-list/citation excerpt from the SRS and (2) the corpus-inventory evidence of absence — without a supplied corpus inventory the check is Not Assessable, never a confirmed 'missing document'."
+    inputs:
+      - srs_reference_list_and_citations
+      - review_corpus_inventory
+    method: |
+      criterion_id: SRV-06
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: reference-list-to-corpus-resolution
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Extract the References list, footnote definitions, and inline normative citations ('theo ICD-PAY-02 v1.3', 'per Policy PR-07')."
+        - "2. Classify each target: (a) internal document element -> route to SRV-R009/SRV-R004; (b) external named artifact -> resolve against review_corpus_inventory; (c) public standard -> verify title+edition identification only."
+        - "3. For (b) with a full corpus inventory supplied: unresolved -> Issue with two-part evidence; resolved -> record the pairing."
+        - "4. For (b) WITHOUT corpus inventory (or partial inventory): not_assessable observation requesting the inventory — do NOT report the document as 'missing', it may simply be unuploaded."
+        - "5. Entries never used by the body are observations (inventory hygiene), not Issues."
+      evidence_expectations:
+        - "MANDATORY two-part evidence: reference-entry excerpt+locator from the SRS artifact AND excerpt/search-scope from the review-corpus inventory artifact demonstrating non-resolution (or the resolved corpus entry)."
+        - "Findings that assert 'referenced document missing from corpus' with only SRS-side evidence are contract violations of this rule."
+      false_positive_considerations:
+        - "An entry catalogued with title+version but physically stored in an external DMS link listed in the corpus manifest counts as identified (not missing)."
+        - "Deprecated-but-superseded pointers ('ICD-PAY-02 v1.3, superseded by v1.5 in corpus') pass when the supersession is recorded."
+      exceptions:
+        - "Self-contained SRSs with no external references: rule not applicable."
+    rationale: "Normative delegation to unresolvable documents means the actual requirements were never reviewed — the document reads complete while its content set is unknown (SRC-0010 References practice; SRC-0001 valid-references completeness at conceptual level)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Recommended SRS outline — Introduction/References practice (outline-level recall only)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete — valid references, conceptual level, as phrased in the registry)" }
+      - { source_id: SRC-0011, locator: "Reference external documents instead of duplicating; keep sources retrievable (memory-based recall)" }
+    origin_note: "Derived from the References practice of the SRC-0010 outline (outline-level recall) and SRC-0011; the two-artifact evidence requirement is this skill's contract-level safeguard against unuploaded-vs-missing confusion, mirroring the unprovided-inventory safeguard used by re.requirement-traceability."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-03"
+
+  - rule_id: SRV-R009
+    rule_type: comparison
+    statement: "Check the appendix apparatus in both directions: every appendix/annex (and numbered figure/table) invoked normatively from the body must exist in the document's appendix inventory; appendices that exist but are never referenced are recorded as observations."
+    inputs:
+      - body_appendix_references
+      - appendix_inventory
+    method: |
+      criterion_id: SRV-06
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: appendix-bidirectional-reference-check
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Inventory the actual appendices (A, B, C...) with headings."
+        - "2. Collect body invocations ('see Appendix D', 'phụ lục B')."
+        - "3. Invoked-but-absent -> Issue (two-part evidence: body invocation excerpt + appendix inventory excerpt)."
+        - "4. Present-but-uninvoked -> observation (info), not Issue."
+      evidence_expectations:
+        - "Body invocation excerpt+locator AND appendix inventory demonstrating absence (or the matched appendix heading)."
+      false_positive_considerations:
+        - "An appendix referenced only in a TBD section body inherits that section's SRV-07 finding; do not stack a second appendix Issue for the same root cause."
+      exceptions:
+        - "Documents without appendices: rule not applicable."
+    rationale: "Body-referenced-but-missing appendices silently truncate the requirements a reader actually receives (SRC-0010 appendices convention; SRC-0001 completeness concept)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0010, locator: "Recommended SRS structure appendices convention (outline-level recall only)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete — valid references, conceptual level)" }
+    origin_note: "Operationalizes the appendices convention of the SRC-0010 outline at recall-safe level; the bidirectional check shape mirrors established sibling-skill comparison-rule evidence patterns."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-03"
+
+  - rule_id: SRV-R010
+    rule_type: analysis
+    statement: "Scan the whole document skeleton for placeholder bodies (TBD/TODO/'sẽ bổ sung sau'/'intentionally left blank' without rationale), surviving template instruction text, and announced-but-empty figure/table slots, distinguishing legitimate declared deferrals via the open-issues register."
+    inputs:
+      - full_srs_document
+      - open_issues_register
+    method: |
+      criterion_id: SRV-07
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: section-level-placeholder-scan
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Walk every section; classify body as substantive | placeholder | template-scaffolding | declared-deferral."
+        - "2. Placeholder markers only count at SECTION level here; an inline TBD inside one requirement sentence is RQ-04 territory — do not re-report it (route note instead)."
+        - "3. Cross-check declared deferrals against open_issues_register entries; unregistered placeholders are Issues."
+        - "4. Announced-empty slots ('xem Bảng 3.2' with no table) are Issues even without literal TBD text."
+      evidence_expectations:
+        - "Section heading + placeholder body excerpt with locators; register excerpt when a deferral is claimed."
+      false_positive_considerations:
+        - "A genuinely marked 'Intentionally left blank — N/A per tailoring §1.6' is Compliant."
+        - "Draft-status documents under an explicit 'not for baseline' banner: not_applicable unless draft hygiene is requested."
+      exceptions:
+        - "Template-declared 'optional, fill when applicable' sections for systems where the applicability condition does not exist."
+    rationale: "Whole-section placeholders let unfinished baselines pass skimming review and corrupt downstream estimation/verification (SRC-0002 Appendix C TBD elimination, locator already used by sibling RSQ-02)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (Completeness & TBD elimination)" }
+      - { source_id: SRC-0011, locator: "Unresolved sections and deferred content in SRS review practice (memory-based recall)" }
+    origin_note: "Derived from NASA SP-2016-6105 Rev2 Appendix C TBD guidance (SRC-0002) at section granularity; deliberately scoped away from RSQ-R003 (deferred requirement clusters within populated sections) and RQ-04 (inline TBD inside one statement)."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-08"
+
+  - rule_id: SRV-R011
+    rule_type: analysis
+    statement: "Detect whole-region abstraction violations: a section whose declared role (template entry, heading, or preamble) is requirement-capturing but whose content is a normative design/implementation specification region (schema/DDL, chosen component architecture, screen implementation), or where the design region replaces the feature's requirement statements."
+    inputs:
+      - full_srs_document
+      - project_document_template
+    method: |
+      criterion_id: SRV-08
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: section-role-vs-content-type-check
+      applicable_languages: ["all"]
+      applicable_artifacts: ["srs", "system-requirement-spec"]
+      evaluation_steps:
+        - "1. Establish each region's declared role from the template/heading/preamble."
+        - "2. Classify nested regions: obligation statements | constraints | design specification content."
+        - "3. Flag design-specification REGIONS nested under requirement-role sections, unless the template permits design constraints."
+        - "4. Check replacement: if the design region is the only content for a declared feature, also note the WHAT gap as an SRV-01/SRV-06 style observation (do not fabricate an RSQ set-completeness finding)."
+        - "5. Never judge whether the embedded design is good — that is sa.* / fr.* territory."
+      evidence_expectations:
+        - "Two-part evidence: role-declaration excerpt (template/heading/preamble) + design-region excerpt with locators."
+      false_positive_considerations:
+        - "Interface SPECIFICATIONS (protocols mandated by external systems) in the interfaces section are valid constraints, not design leakage (same rationale as RQ-02's valid-constraint rule)."
+        - "One statement with implementation detail inside an otherwise-clean section is RQ-02, not SRV-08."
+        - "Informative appendix marked 'design notes — non-normative' passes."
+      exceptions:
+        - "Templates that legitimately merge requirements+design (prescriptive migration specs) when declared."
+    rationale: "Chapter-level design leakage turns a WHAT contract into an unjustified HOW contract and hides the real requirements for that feature (SRC-0003 abstraction level & valid-constraint guidance; SRC-0011 requirements-not-design practice)."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0003, locator: "Section 4.2 (level of abstraction; valid constraints vs premature design solutions)" }
+      - { source_id: SRC-0011, locator: "An SRS specifies requirements, not design (memory-based recall)" }
+    origin_note: "Section-level operationalization of the RQ-02 (statement-level) guidance from SRC-0003/SRC-0011; boundary: statements -> re.requirement-quality, classification mixing -> re.requirement-set-quality RSQ-06, whole regions -> this rule."
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-09"
