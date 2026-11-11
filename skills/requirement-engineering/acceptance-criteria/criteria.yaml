@@ -1,0 +1,426 @@
+# Criteria — Skill: re.acceptance-criteria (Schema: schemas/definitions/criterion.schema.json)
+# Domain: requirement-engineering. Evaluates the quality of an Acceptance Criteria suite as a whole
+# (AC-suite granularity): per-AC wording/structure + set-level anchoring/coverage, not individual
+# requirement statements (owned by re.requirement-quality) and not RTM link structure (owned by re.requirement-traceability).
+
+owner:
+  owner_type: skill
+  owner_id: re.acceptance-criteria
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: ACA-01
+    statement: "Each acceptance criterion states an expected outcome whose pass/fail can be decided without guessing: quantified thresholds where quantity matters, or an observable behavior/output where qualitative acceptance is valid."
+    rationale: "Acceptance criteria are a form of requirement and inherit the Verifiable characteristic of individual requirements (ISO/IEC/IEEE 29148:2018 Clause 5.2.5, referenced at conceptual level). NASA SE Handbook Appendix C ties every requirement to how it will be verified; the BDD Then-clause concept (SRC-0009) requires an observable outcome. An AC that two reviewers cannot decide pass/fail on cannot gate acceptance."
+    applies_to: [acceptance-criteria, acceptance-criteria-spec, user-story]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (individual requirement characteristics — Verifiable; conceptual paraphrase)" }
+      - { source_id: SRC-0002, locator: "Appendix C (verification alignment; heuristic paraphrase)" }
+      - { source_id: SRC-0009, locator: "BDD scenario concept — Then must state an observable outcome (paraphrase, no verbatim quotation)" }
+    origin_note: "Synthesized from registered standards plus the cloned vendor research pack (yihannangua prd-review references/requirement-quality-checklist.md, 'Observable acceptance criteria or test oracle'). Interactive authoring steps of the team's business-requirement-analysis skill (Testability row) were stripped; only the declarative check was kept."
+    synthesis_note: |
+      name: verifiable-observable-outcome
+      evaluation_objective: Decide whether, from the AC text alone (plus defined terms), a reasonable reviewer can determine acceptance pass or fail without inventing criteria.
+      pass_conditions:
+        - Expected result is observable (screen state, record change, message, measurable response) rather than an intent adjective.
+        - Where quantity matters (time, count, size, rate, score), a threshold or bounded range is stated or defined by explicit reference.
+        - Where quality is behavioral rather than numeric, the observable demonstration behavior is stated (anti-dogma: not every AC needs a number).
+      issue_conditions:
+        - Subjective adjectives ('good', 'friendly', 'stable') decide acceptance with no observable anchor.
+        - A quantity-sensitive outcome is demanded with no threshold or bound ('fast response', 'sufficiently detailed').
+        - The 'outcome' describes purpose ('works correctly', 'as expected') instead of a decidable result.
+      required_context:
+        - AC statement text.
+      optional_context:
+        - Domain glossary or measurement conventions that define referenced terms.
+        - Owner requirement/story text when the referenced bound may live there.
+      standalone_assessable_when: The AC names its subject, trigger condition, and outcome in self-contained text.
+      not_assessable_conditions:
+        - The AC points to an external standard/definition that was not provided in the review package.
+        - The project's measurement unit conventions are unknown and change the decidable meaning of the stated numbers.
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Exact AC excerpt with ArtifactLocation (path, section, line range/element id).
+      scope_boundaries:
+        in_scope: Verifiability of wording at AC-suite granularity (items in acceptance-criteria sections and AC lists of stories).
+        delegated_to_other_skills:
+          - Is the same characteristic violated by an individual requirement statement outside AC sections? -> re.requirement-quality (RQ-07 Verifiable)
+          - Will the AC actually validate stakeholder needs? -> re.requirement-validation (planned-in-scope sibling)
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-01", "examples/golden-test-cases.yaml#ACA-GTC-08"]
+
+  - criterion_id: ACA-02
+    statement: "When an acceptance criterion uses the Given/When/Then (Gherkin-style) format, its parts are well-formed: Given holds preconditions only, When holds the actor-initiated action, Then holds the observable expected result, in separable positions."
+    rationale: "BDD/Gherkin (SRC-0009, conceptual paraphrase) derives its value from separating precondition, action, and outcome so each scenario maps to one executable test. The cloned vendor pattern (yihannangua business-rule-checklist.md, Suggested Acceptance Criteria Pattern) prescribes Given [precondition] / When [actor/action/input] / Then [expected system behavior] / And [state/feedback]. Misplaced parts (action in Given, intent in Then) silently break that mapping."
+    applies_to: [acceptance-criteria, user-story]
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0009, locator: "Gherkin Given/When/Then keyword semantics (conceptual; no page-level claim — see RN-0004 section 5)" }
+      - { source_id: SRC-0002, locator: "Appendix C (condition-action-result separation; heuristic paraphrase)" }
+    origin_note: "Pattern wording adapted from the cloned vendor research pack (prd-review references/business-rule-checklist.md) and the team's ba-documentation skill; interactive generation prompts removed."
+    synthesis_note: |
+      name: gwt-well-formedness
+      evaluation_objective: For GWT-formatted ACs, verify each keyword position carries its proper content type so the scenario is mechanically readable as a test.
+      pass_conditions:
+        - Given states system/actor preconditions and data state before the action.
+        - When states exactly one actor-initiated action per scenario flow.
+        - Then states an observable system outcome; And-clauses extend the same outcome with complementary evidence (record change, user feedback).
+        - Multiple When/Then pairs are allowed when they are explicitly sequential steps.
+      issue_conditions:
+        - An action or trigger appears inside Given.
+        - Then carries no expected result ('Then the user proceeds') or states intent ('Then the flow works well').
+        - Preconditions appear after When inside Then/And clauses.
+        - A scenario lacks any Then, leaving acceptance undefined.
+      required_context:
+        - The formatted AC text with recognizable keyword structure.
+      optional_context:
+        - Project AC-format guide (table vs Gherkin vs prose).
+      standalone_assessable_when: The AC visibly uses Given/When/Then keywords.
+      not_assessable_conditions:
+        - Mixed fragments make the intended keyword mapping ambiguous and the source cannot be parsed; report parser limitation, never fabricate structure.
+      not_applicable_conditions:
+        - The project's declared AC format is not GWT (e.g., checklist table, prose bullet) and no GWT keywords appear. Not Applicable must be justified by the declared format, not by reviewer convenience.
+      evidence_expectations:
+        - Excerpt showing the keyword positions in question.
+      scope_boundaries:
+        in_scope: Structural well-formedness of GWT-formatted ACs only.
+        delegated_to_other_skills:
+          - Atomicity judgment of the behavior behind a multi-step scenario -> ACA-03
+          - Whether the GWT outcome itself is measurable -> ACA-01
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-03", "examples/golden-test-cases.yaml#ACA-GTC-08"]
+
+  - criterion_id: ACA-03
+    statement: "Each acceptance criterion accepts or rejects exactly one behavior: its conjuncts, if any, are complementary facets of a single acceptance decision, not independently acceptable behaviors bundled by 'và/and/or'."
+    rationale: "The Singular characteristic (ISO/IEC/IEEE 29148:2018 Clause 5.2.5, conceptual) and NASA Appendix C's compound-requirement warning apply to ACs as bundles of obligations: a bundled AC that half-passes gives no accept/reject verdict. The team's business-requirement-analysis skill states Atomicity ('Mỗi Requirement chỉ mô tả một chức năng hoặc ràng buộc duy nhất'). INVEST's Small/Testable reading (SRC-0008, paraphrase) likewise favors one-decision-per-AC."
+    applies_to: [acceptance-criteria, acceptance-criteria-spec, user-story]
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (individual requirement characteristics — Singular; conceptual paraphrase)" }
+      - { source_id: SRC-0002, locator: "Appendix C (compound requirement pitfall; heuristic paraphrase)" }
+      - { source_id: SRC-0008, locator: "INVEST acronym (Small/Testable reading; paraphrase, no verbatim quotation)" }
+    origin_note: "Synthesized from standards plus the team's business-requirement-analysis quality table (Atomicity row). The vendor GWT pattern's And-clauses were explicitly analyzed: they extend one outcome with evidence facets, which this criterion treats as atomic (see false-positive handling in ACA-R003)."
+    synthesis_note: |
+      name: single-behavior-atomicity
+      evaluation_objective: Ensure a failing conjunct fails the whole AC meaningfully, i.e., the AC represents one accept/reject decision.
+      pass_conditions:
+        - One behavior/outcome per AC; connectors join facets of the same event (record state + matching UI feedback for the same transaction).
+        - Partial-pass on one conjunct logically cannot occur while the other conjunct fully passes, unless both describe one decision.
+      issue_conditions:
+        - Conjoined independent behaviors ('sends an email and generates a monthly report') that can pass/fail separately.
+        - 'and/or' connectors making the accepted alternative undefined.
+        - A checklist of distinct actions packed into one Then line.
+      required_context:
+        - AC statement text.
+      optional_context:
+        - Owner item scope, to see whether conjuncts belong to different features.
+      standalone_assessable_when: Conjunction structure is visible in the AC text itself.
+      not_assessable_conditions: []
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Excerpt of the AC with the conjoined parts identifiable.
+      scope_boundaries:
+        in_scope: Atomicity of AC statements.
+        delegated_to_other_skills:
+          - Atomicity of a requirement statement outside AC sections -> re.requirement-quality (RQ-05 Singular)
+          - Two ACs duplicating one behavior after a split -> ACA-09
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-02", "examples/golden-test-cases.yaml#ACA-GTC-08"]
+
+  - criterion_id: ACA-04
+    statement: "Bidirectional anchoring at AC-suite granularity: every requirement item in the declared review scope (FR, use case, user story) has at least one acceptance criterion, and every acceptance criterion names a resolvable owner item within that scope."
+    rationale: "Unanchored ACs silently expand scope; owner items without ACs cannot be accepted (the vendor prd-review guidance requires naming scenarios that lack testable acceptance wording, and the sdlc pack's trellis-handoff pattern ties business-level acceptance to parent rules/PRD). The check is the suite-level analog of set Completeness (SRC-0001 Clause 5.2.6 / SRC-0004 set characteristics, conceptual). Deliberately narrower than RSQ-02 companion coverage and RTR link structure: this criterion sees only AC-to-owner anchoring inside the provided package."
+    applies_to: [acceptance-criteria-spec, acceptance-criteria, user-story]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (characteristics of a set of requirements — Complete; conceptual paraphrase); Clause 6.4 (requirements validation, conceptual)" }
+      - { source_id: SRC-0004, locator: "Set characteristics (Complete / Able to be Validated; paraphrase)" }
+      - { source_id: SRC-0008, locator: "INVEST acronym (Valuable/Testable reading: a story without acceptance criteria is not ready; paraphrase)" }
+    origin_note: "Bidirectional set comparison pattern follows the sibling re.requirement-traceability methodology (RTR-01/RTR-02/RTR-03 flow-map rules) restricted to AC-to-owner edges, to avoid double-owning RTM structure."
+    synthesis_note: |
+      name: ac-owner-bidirectional-coverage
+      evaluation_objective: Compare the set of in-scope owner items against the set of ACs and their claimed anchors, in both directions.
+      pass_conditions:
+        - Each in-scope owner item (FR/UC/US enumerated in the package) is named by one or more ACs.
+        - Each AC states an owner item reference resolvable within the provided package.
+        - Declared scope boundary (release/module) is respected; items outside it are excluded from the comparison.
+      issue_conditions:
+        - Owner item with zero anchored ACs inside the declared scope.
+        - AC whose named owner id does not exist in the package (broken anchor).
+        - AC anchored only to a whole section or 'the module', leaving the decision unattributable.
+      required_context:
+        - Enumerated owner-item list or the full text of owner items (stories/FRs/UCs) in scope.
+        - The AC list with anchor references (or recoverable 'AC under story X' structure).
+        - Declared review scope (which release/module is being assessed).
+      optional_context:
+        - Backlog or RTM for cross-checking (if supplied, structural link issues stay delegated).
+      standalone_assessable_when: One AC's anchor can be matched to one owner item present in the package.
+      not_assessable_conditions:
+        - Owner items not provided or scope declaration absent -> report Not Assessable for coverage; the partial-suite safeguard forbids confirming 'missing AC' defects for items that might live in unprovided sections (mirrors re.requirement-set-quality safeguard).
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Owner-item ids with zero ACs; AC ids with broken/absent anchors; both listed per finding.
+      scope_boundaries:
+        in_scope: AC-suite anchoring/coverage only, inside the provided review package.
+        delegated_to_other_skills:
+          - Whether the requirement set itself covers declared project scope, companion gaps -> re.requirement-set-quality (RSQ-01, RSQ-02)
+          - Cross-layer trace links, RTM rows, symmetry between SRS/design/test artifacts -> re.requirement-traceability (RTR-01, RTR-02, RTR-03)
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-04", "examples/golden-test-cases.yaml#ACA-GTC-06"]
+
+  - criterion_id: ACA-05
+    statement: "For owner items with declared or domain-obvious failure modes (validation rules, external dependencies, concurrency/conflict, timeout, permission denial), the AC suite includes negative/edge/error-path criteria, not only the success path."
+    rationale: "Completeness of acceptance requires the counterpart that NASA Appendix C and the vendor checklists demand (failure/exception/retry/rollback rows in yihannangua business-rule-checklist.md; unspecified conflict behavior as a quality gap in requirement-quality-checklist.md). An AC suite that only proves the happy path cannot reject a buggy implementation at acceptance."
+    applies_to: [acceptance-criteria-spec, acceptance-criteria, user-story]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (boundary/exception completeness heuristics; paraphrase)" }
+      - { source_id: SRC-0001, locator: "Clause 6.4 (requirements validation; conceptual) " }
+    origin_note: "Failure-mode enumeration adapted from the cloned vendor packs (prd-review business-rule-checklist failure/exception/retry/rollback rows; team business-requirement-analysis Completeness row on pre/post-conditions), converted from authoring prompts into a declarative coverage check."
+    synthesis_note: |
+      name: negative-edge-path-presence
+      evaluation_objective: For each owner item whose text (or explicitly supplied domain rules) reveals failure/boundary modes, confirm the AC suite decides acceptance on at least the significant ones.
+      pass_conditions:
+        - Error-path ACs exist for failure modes named in the owner item (validation rejects bad input with specific message; payment gateway timeout shows retryable state).
+        - Boundary ACs exist for stated numeric bounds (at-limit, over-limit).
+        - Suite-level shared negative ACs may cover multiple items when their failure mode and handling are identical (explicitly cross-referenced).
+      issue_conditions:
+        - Owner item states validation/limit rules but its ACs only accept the success path.
+        - An external dependency appears in the flow with no failure-mode AC and no explicit documented risk-acceptance.
+      required_context:
+        - Owner item text exposing failure modes, or a supplied exception-flow description.
+        - AC list anchored to those owner items (ACA-04 anchors).
+      optional_context:
+        - Domain/exception patterns from the knowledge base.
+      standalone_assessable_when: Failure modes are visible inside the owner item text itself.
+      not_assessable_conditions:
+        - Owner items not provided (cannot enumerate failure modes without inventing them) -> Not Assessable, never a fabricated 'missing error AC' finding.
+        - Guessing failure modes from general experience is FORBIDDEN; absence of ACs for an undeclared failure mode is not an issue.
+      not_applicable_conditions:
+        - Owner items are pure static display with no state change, external call, or boundary condition (justify per item).
+      evidence_expectations:
+        - Cite the owner-item excerpt naming the failure mode and the AC excerpt set (or its absence) for that anchor.
+      scope_boundaries:
+        in_scope: Presence of negative/edge ACs inside the AC suite.
+        delegated_to_other_skills:
+          - Missing exception-handling REQUIREMENTS (not ACs) in the requirement set -> re.requirement-set-quality (RSQ-02)
+          - Whether error paths themselves are well-worded -> ACA-01/ACA-08 on those ACs
+    depends_on_items: ["ACA-04"]
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-02", "examples/golden-test-cases.yaml#ACA-GTC-06"]
+
+  - criterion_id: ACA-06
+    statement: "Each acceptance criterion restates acceptance of its owner item only: it introduces no new obligation, no expanded scope, and no implementation/design decision (technology, schema, algorithm) that the owner item does not require."
+    rationale: "ACs are downstream of their owner item; NASA Section 4.2 distinguishes valid constraints from premature design solutions (SRC-0003), and the team's business-requirement-analysis skill forbids inventing requirements without basis (proposals must be labeled PROPOSED). An AC that quietly adds a numeric duty or names a technology turns acceptance into unauthorized scope change — the vendor templates treat ACs as business-level acceptance tied to the parent PRD/rules."
+    applies_to: [acceptance-criteria, acceptance-criteria-spec, user-story]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0003, locator: "Section 4.2 (valid constraints vs premature design solutions; paraphrase)" }
+      - { source_id: SRC-0008, locator: "INVEST acronym (Negotiable reading: AC wording should not harden design; paraphrase)" }
+    origin_note: "Creep-detection method (diff of AC obligations vs owner-item obligations) is an engineering synthesis; provenance recorded here per repository rule that new obligations cannot hide inside acceptance sections."
+    synthesis_note: |
+      name: no-creep-no-design-lockin
+      evaluation_objective: Detect AC content that would change what is being built, beyond how strictly acceptance is judged.
+      pass_conditions:
+        - AC thresholds/measures refine owner-item obligations without exceeding them.
+        - Test-environment, data-setup, and measurement-method constraints are allowed (they define how to demonstrate, not what to build).
+        - Any genuinely new obligation is explicitly labeled PROPOSED / new-requirement by the team and excluded from the suite.
+      issue_conditions:
+        - AC adds a duty absent from the owner item (new channel, new record, new integration, new numeric bound tighter or broader than stated).
+        - AC prescribes implementation ('stored in the orders table via POST /api/v2', 'uses Firebase push') as an acceptance condition rather than an observable outcome.
+      required_context:
+        - AC text and its owner item text (via ACA-04 anchors).
+      optional_context:
+        - Architecture decisions / approved design docs to verify whether the named mechanism is an accepted constraint rather than AC creep.
+      standalone_assessable_when: The AC itself visibly contains an obligation or mechanism the owner item never mentions (one-sided evidence suffices when the owner item text is provided).
+      not_assessable_conditions:
+        - Owner item text not provided -> creep comparison impossible; report Not Assessable.
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Both excerpts (AC and owner item) for the diff, verbatim.
+      scope_boundaries:
+        in_scope: AC-introduced creep/design at suite granularity.
+        delegated_to_other_skills:
+          - Gold-plating of requirements against stakeholder needs -> re.requirement-validation
+          - Design premature-design checks on non-AC requirement statements -> re.requirement-quality (its valid-constraints principle)
+    depends_on_items: ["ACA-04"]
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-07"]
+
+  - criterion_id: ACA-07
+    statement: "Acceptance criteria carry stable, unique identifiers following the project's AC/TC naming convention (or a consistent convention inferable from the document), so findings, tests, and discussions can reference one AC unambiguously."
+    rationale: "Reference integrity makes AC findings actionable; the team's ba-documentation skill requires keeping approved IDs stable, and the sibling traceability skill's ID-integrity practice (no duplicate/broken ids) applies inside the AC suite. Numbering styles (TC-01, AC-<story>.<n>, Given blocks in Gherkin) differ per project; only consistency and uniqueness are enforced here."
+    applies_to: [acceptance-criteria-spec, acceptance-criteria, user-story]
+    default_severity_hint: minor
+    authority_level: expert-recommendation
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (traceability depends on unique identifiers; conceptual support only)" }
+    origin_note: "Expert recommendation synthesized from the team's ba-documentation ID-stability rule and this repository's own ID discipline (criterion/rule/source id conventions). Not an ISO-clause obligation by itself; that is why authority is expert-recommendation, with origin_note."
+    synthesis_note: |
+      name: ac-id-convention-integrity
+      evaluation_objective: Verify AC items can be referenced unambiguously and consistently inside the suite.
+      pass_conditions:
+        - Declared project convention exists and is followed, or a single consistent pattern is observable across the suite.
+        - AC ids are unique within the document/suite; story-scoped numbering (TC-01 per story) is prefixed so cross-story references stay unambiguous.
+      issue_conditions:
+        - Duplicate AC ids within the suite or within one owner item.
+        - Numbering resets collide without prefix, making cited references ambiguous.
+        - ACs unnumbered in a suite large enough that prose references fail ('the second payment AC').
+      required_context:
+        - The AC list as presented (ids visible).
+      optional_context:
+        - Project documentation-style guide naming the convention.
+      standalone_assessable_when: Ids (or their absence) are visible in the provided document structure.
+      not_assessable_conditions:
+        - Multiple conflicting numbering patterns and no declared convention -> clarify which is intended instead of guessing (needs-clarification, not confirmed defect).
+      not_applicable_conditions:
+        - A one-off AC bullet inside a single story with a project-declared un-numbered prose format (justify from declared convention; absence of numbers alone is not an issue).
+      evidence_expectations:
+        - Colliding ids or ambiguous reference examples, verbatim.
+      scope_boundaries:
+        in_scope: Identifier hygiene inside the AC suite.
+        delegated_to_other_skills:
+          - Duplicate/broken ids across trace artifacts (RTM rows, design/test targets) -> re.requirement-traceability (RTR-04)
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-04"]
+
+  - criterion_id: ACA-08
+    statement: "AC wording admits only one reasonable acceptance interpretation: vague qualifiers, undefined thresholds, and unspecified actor/object/timing/scope/permission are either bounded inside the AC or resolved by an explicit definition reference."
+    rationale: "The Unambiguous characteristic (SRC-0001 Clause 5.2.5, conceptual) plus the vendor ambiguity test — 'two reasonable readers can implement or test it differently' — decide whether acceptance is arguable. The team's Vietnamese context makes qualifier patterns concrete (nhanh, nhanh chóng, kịp thời, dễ, dễ dàng, hợp lý), mirrored from the re.requirement-quality vi language-pack; these are detection signals, never automatic defects (anti-dogma)."
+    applies_to: [acceptance-criteria, acceptance-criteria-spec, user-story]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (individual requirement characteristics — Unambiguous; conceptual paraphrase)" }
+      - { source_id: SRC-0002, locator: "Appendix C (ambiguity heuristics; paraphrase)" }
+      - { source_id: SRC-0004, locator: "Linguistic/structural heuristic guidance (paraphrase; no verbatim rules reproduced)" }
+    origin_note: "Ambiguity-word signal lists are language-pack material already curated by re.requirement-quality (language-packs/vi.yaml, en.yaml); this criterion reuses the pattern at AC granularity via its rules, deferring non-AC statements to re.requirement-quality to keep single ownership."
+    synthesis_note: |
+      name: unambiguous-acceptance-interpretation
+      evaluation_objective: Test whether two reasonable reviewers could reach different accept/reject decisions on the same observation.
+      pass_conditions:
+        - Qualifiers are bounded ('within 3 seconds on 4G', 'dễ sử dụng: user hoàn thành lần đầu không hướng dẫn trong <= 2 phút').
+        - Unspecified elements (who, what object, when, which scope, which permission) are pinned down or explicitly delegated to a named defined term.
+      issue_conditions:
+        - Vague qualifier with no bound anywhere in the AC or its referenced definitions.
+        - Unspecified conflict/permission behavior inside the AC ('thông báo cho bộ phận liên quan khi cần thiết').
+        - Open-ended lists ('v.v.', 'etc.') inside a pass/fail condition.
+      required_context:
+        - AC text; for bounded-by-definition claims, the referenced definition or glossary.
+      optional_context:
+        - Language pack signal lists (en/vi) for heuristic triggers.
+      standalone_assessable_when: The AC text alone shows a boundless qualifier or open clause.
+      not_assessable_conditions:
+        - The qualifier is defined in an external document not present in the package -> Not Assessable + clarification request (do not assume the definition is missing from the project, only from the package).
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Excerpt plus the two competing interpretations spelled out (vendor rule: never report mere 'vague word' without the interpretation clash and why it matters).
+      scope_boundaries:
+        in_scope: Ambiguity of AC statements.
+        delegated_to_other_skills:
+          - Ambiguity of requirement statements outside AC sections -> re.requirement-quality (RQ-03)
+          - Missing numeric detail because the bound lives in an unprovided NFR section -> clarification request, ACA-01 boundary
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-01", "examples/golden-test-cases.yaml#ACA-GTC-05"]
+
+  - criterion_id: ACA-09
+    statement: "The AC suite is free of duplicate ACs that judge the same acceptance decision with divergent wording, and free of ACs that contradict each other or their owner item's functional description under overlapping conditions."
+    rationale: "Set-level Consistency applies to any requirement collection, acceptance criteria included (SRC-0001 Clause 5.2.6 conceptual; SRC-0004 set characteristics paraphrase). The vendor requirement-quality-checklist lists 'Acceptance criteria and functional descriptions' among the pairs that must not contradict; contradictory ACs make acceptance a coin flip and duplicated ACs split evidence."
+    applies_to: [acceptance-criteria-spec, acceptance-criteria]
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (characteristics of a set of requirements — Consistent; conceptual paraphrase)" }
+      - { source_id: SRC-0004, locator: "Set characteristics (Consistent; paraphrase)" }
+    origin_note: "Pairwise comparison method mirrors sibling skill rules (RSQ-R004/R005/R007 pattern: cite both sides verbatim, require >=2 evidence items) restricted to AC-to-AC and AC-to-owner-item pairs."
+    synthesis_note: |
+      name: ac-duplication-and-contradiction
+      evaluation_objective: Compare AC pairs (and AC-vs-owner-item pairs) that target the same behavior/condition for contradiction or redundant duplication.
+      pass_conditions:
+        - No two ACs accept the same observable outcome under the same conditions with different numeric/behavioral bounds.
+        - Duplicate-looking ACs are either an intentional summary/detail hierarchy explicitly cross-referenced, or merged.
+        - AC outcome text does not conflict with the owner item's functional description.
+      issue_conditions:
+        - Same condition, different expected results (AC-3 says 24h expiry, AC-9 says 48h).
+        - Same behavior re-specified twice with divergent wording that could drift independently (semantic duplication).
+        - AC contradicts its own owner item's stated rule (AC accepts X, owner forbids X).
+      required_context:
+        - At least the suspected pair excerpts (both sides, verbatim).
+        - Owner item text for AC-vs-owner contradictions.
+      optional_context:
+        - Terminology glossary (a pair may only look contradictory under drifted terms).
+      standalone_assessable_when: Both sides of the suspect pair are in the package.
+      not_assessable_conditions:
+        - Only one side provided or behavior identity unclear -> needs-clarification, never a confirmed contradiction from one excerpt.
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Two or more verbatim excerpts with ids; statement of the overlapping condition and the conflicting bounds.
+      scope_boundaries:
+        in_scope: Duplication/contradiction involving at least one AC.
+        delegated_to_other_skills:
+          - Requirement-vs-requirement duplication/contradiction outside AC sections -> re.requirement-set-quality (RSQ-03, RSQ-04)
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-07"]
+
+  - criterion_id: ACA-10
+    statement: "Each acceptance criterion states, or is paired with, how it will be demonstrated at acceptance: the verification means (automated test, manual scenario, demo evidence, measurement protocol, or oracle/data condition) is identifiable without inventing it."
+    rationale: "INVEST's Testable letter (SRC-0008, paraphrase) and NASA Appendix C's verification-alignment heuristic require knowing how acceptance is proven; SRC-0003 covers verification-method selection. The vendor checklist demands an observable criterion 'or test oracle'. A decidable outcome (ACA-01) can still be unprovable at acceptance if nobody knows the demonstration vehicle — this criterion closes that gap at suite level."
+    applies_to: [acceptance-criteria-spec, acceptance-criteria, user-story]
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0008, locator: "INVEST acronym (Testable; paraphrase — no verbatim quotation; see RN-0004 section 5)" }
+      - { source_id: SRC-0002, locator: "Appendix C (verification alignment; paraphrase)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (verification method selection; paraphrase)" }
+    origin_note: "Suite-level allowance for a global method-mapping table (instead of per-AC method tags) is an engineering synthesis following repository precedent that formats may vary but the information must exist somewhere inside the provided package."
+    synthesis_note: |
+      name: demonstration-method-stated
+      evaluation_objective: Identify how each AC is proven accepted, from the suite or its declared in-package mapping.
+      pass_conditions:
+        - Per-AC method present (unit/integration test id, manual test scenario, demo with given data, monitoring metric) or suite-level mapping covering the AC.
+        - The method's evidence type matches the outcome kind (timing measured by a clock-logged automated run, not eyeballed demo) or a named reason.
+      issue_conditions:
+        - No method anywhere in the package for a materially hard-to-demonstrate AC (performance bound, audit trail) — for plainly automatable functional ACs an implicit test-level method may suffice; escalate only when ambiguity is real.
+        - 'Verify as appropriate'-style placeholder methods that add no information.
+      required_context:
+        - AC text; the suite's method column/tag or a supplied in-package acceptance-test plan section.
+      optional_context:
+        - QA conventions (what counts as sufficient method detail in this project).
+      standalone_assessable_when: The AC or its suite mapping names a method.
+      not_assessable_conditions:
+        - Method lives in an external test plan not included in the review package -> Not Assessable + request the plan; do not confirm a defect against artifacts you were not given.
+      not_applicable_conditions: []
+      evidence_expectations:
+        - Excerpt of the method statement or citation of the covering mapping row.
+      scope_boundaries:
+        in_scope: Presence/consistency of demonstration intent inside the AC suite.
+        delegated_to_other_skills:
+          - Test-case design quality, coverage adequacy of written tests -> qa.test-design / qa.test-coverage (Planned)
+          - Whether the chosen method actually validates stakeholder needs -> re.requirement-validation
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-01", "examples/golden-test-cases.yaml#ACA-GTC-08"]

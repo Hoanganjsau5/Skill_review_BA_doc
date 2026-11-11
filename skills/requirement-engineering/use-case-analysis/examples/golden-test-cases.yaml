@@ -1,0 +1,357 @@
+# Golden Test Cases — Skill: re.use-case-analysis
+# Machine-readable behavioral fixtures. status per criterion: Compliant | Issue | Not Assessable | Not Applicable.
+# Comparison-rule findings (UCA-R005/R006) must carry >= 2 evidence items per finding schema.
+
+suite_id: re.use-case-analysis.golden-suite
+skill_id: re.use-case-analysis
+skill_version: 0.1.0
+status_enum: [Compliant, Issue, Not Assessable, Not Applicable]
+
+test_cases:
+  - test_id: UCA-GTC-01
+    scenario: "1. Missing precondition declaration and unprotected payment step (UCA-03, UCA-06; UCA-08 gate)"
+    language: en
+    artifact_type: use-case-spec
+    input_context:
+      completeness_mode: full
+      id_index_provided: false
+      use_case:
+        id: UC-012
+        name: "Create Booking"
+        primary_actor: Traveler
+        secondary_actors: [Payment Gateway]
+        trigger: "Traveler taps 'Book' on tour detail page"
+        preconditions: ""
+        postconditions: "Booking record created; e-tour voucher issued to Traveler; inventory decremented"
+        main_flow:
+          - "1. Traveler selects tour and dates"
+          - "2. System checks seat availability"
+          - "3. Traveler enters traveler details and promo code"
+          - "4. System validates promo code"
+          - "5. System requests payment authorization from Payment Gateway"
+          - "6. Traveler confirms payment"
+          - "7. System creates booking and issues voucher"
+        extensions:
+          - "4a. Promo code invalid: system shows error, return to step 3."
+    expected_criterion_statuses:
+      UCA-01: Compliant
+      UCA-02: Compliant
+      UCA-03: Issue
+      UCA-04: Compliant
+      UCA-05: Compliant
+      UCA-06: Issue
+      UCA-07: Compliant
+      UCA-08: Not Assessable
+      UCA-09: Compliant
+      UCA-10: Compliant
+    expected_findings:
+      - criterion_id: UCA-03
+        rule_ids: [UCA-R001]
+        type: gap
+        severity: minor
+        confidence: high
+        evidence_excerpt: "preconditions: (blank); step 3 presumes session/login state nowhere declared"
+      - criterion_id: UCA-06
+        rule_ids: [UCA-R003]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "5. System requests payment authorization from Payment Gateway — no extension for gateway rejection nor timeout/no-response"
+    explanation: >
+      Step 5 is an external-call risk class with zero anchored extension, violating failure AND no-response coverage.
+      Preconditions blank while the flow presumes entry state is the classic implicit-assumption gap.
+      UCA-08 stays Not Assessable because no BR/FR index ships in the package — the skill must not confirm broken references from one side alone.
+
+  - test_id: UCA-GTC-02
+    scenario: "2. Vietnamese narrative use case: unnumbered prose flow, anonymous actor actions (UCA-02, UCA-05); header fields unsupplied"
+    language: vi
+    artifact_type: use-case
+    input_context:
+      completeness_mode: partial
+      id_index_provided: false
+      use_case:
+        id: UC-045
+        name: "Đặt tour ghép"
+        body_only_flow: >
+          Người dùng mở trang chi tiết tour và chọn ngày khởi hành. Hệ thống kiểm tra chỗ trống rồi
+          giữ tạm chỗ và nhắc người dùng nhập thông tin khách và mã giảm giá, sau đó chuyển tới cổng
+          thanh toán của ngân hàng để trừ tiền. Nếu thanh toán thành công thì tour được xác nhận,
+          hướng dẫn viên được thông báo. Người dùng có thể thêm nhiều hành khách, làm đi làm lại cho đến khi xong.
+    expected_criterion_statuses:
+      UCA-01: Compliant
+      UCA-02: Issue
+      UCA-03: Not Assessable
+      UCA-04: Not Assessable
+      UCA-05: Issue
+      UCA-06: Issue
+      UCA-07: Compliant
+      UCA-08: Not Assessable
+      UCA-09: Not Assessable
+      UCA-10: Compliant
+    expected_findings:
+      - criterion_id: UCA-02
+        rule_ids: [UCA-R001]
+        type: defect
+        severity: major
+        confidence: medium
+        evidence_excerpt: "chuyển tới cổng thanh toán của ngân hàng — ngân hàng chưa từng được nêu như actor; không rõ ai thao tác"
+      - criterion_id: UCA-05
+        rule_ids: [UCA-R002]
+        type: defect
+        severity: minor
+        confidence: high
+        evidence_excerpt: "giữ tạm chỗ và nhắc người dùng nhập thông tin khách và mã giảm giá (một bước chứa nhiều nghĩa vụ, không đánh số); 'làm đi làm lại cho đến khi xong' — lặp không có vật lặp và điều kiện dừng rõ"
+      - criterion_id: UCA-06
+        rule_ids: [UCA-R003]
+        type: gap
+        severity: major
+        confidence: high
+        evidence_excerpt: "thanh toán qua ngân hàng không có nhánh từ chối/hết thời gian chờ; toàn văn không có phần luồng rẽ nhánh"
+    explanation: >
+      Flow prose exists but trigger/precondition/postcondition fields were not supplied at all for this fragment,
+      so UCA-03/04/09 return Not Assessable instead of Issue (cannot distinguish 'absent' from 'unsupplied').
+      Unnumbered multi-obligation steps and the open loop ("làm đi làm lại") fail UCA-05. Vietnamese wording ambiguity
+      inside a single step is deliberately NOT opened here — that is re.requirement-quality's lane (see GTC-07).
+
+  - test_id: UCA-GTC-03
+    scenario: "3. Design leakage and granularity swing plus undisclosed-uncertainty contradiction (UCA-07, UCA-10)"
+    language: en
+    artifact_type: use-case-spec
+    input_context:
+      completeness_mode: full
+      id_index_provided: false
+      project_context_note: "Design meeting notes in package state the payment-integration provider is still UNDECIDED."
+      use_case:
+        id: UC-021
+        name: "Pay Booking"
+        primary_actor: Traveler
+        secondary_actors: [Payment Provider]
+        trigger: "Traveler proceeds to checkout"
+        preconditions: "Booking draft exists; cart total > 0"
+        postconditions: "Payment captured; booking status = CONFIRMED"
+        main_flow:
+          - "1. System renders the payment screen with card-input fields bound to the t_payment_session table"
+          - "2. Traveler types the 16-digit card number into the top-left text box and clicks the green rounded Pay button"
+          - "3. Users pay via the PayOO gateway API using its v2 JSON payload"
+          - "4. Booking confirmed."
+        extensions:
+          - "2a. Expired card: show inline validation error, return to step 2."
+    expected_criterion_statuses:
+      UCA-01: Compliant
+      UCA-02: Compliant
+      UCA-03: Compliant
+      UCA-04: Compliant
+      UCA-05: Compliant
+      UCA-06: Compliant
+      UCA-07: Issue
+      UCA-08: Not Assessable
+      UCA-09: Compliant
+      UCA-10: Issue
+    expected_findings:
+      - criterion_id: UCA-07
+        rule_ids: [UCA-R004]
+        type: defect
+        severity: minor
+        confidence: medium
+        evidence_excerpt: "steps 1-3 narrate DB table binding, widget geometry and API payload (HOW), while step 4 jumps to summary level — granularity swing breaks extension anchoring"
+      - criterion_id: UCA-10
+        rule_ids: [UCA-R001]
+        type: inconsistency
+        severity: minor
+        confidence: high
+        evidence_excerpt: "step 3 asserts 'PayOO gateway API ... v2 JSON payload' although package notes declare the provider undecided; no TBD/PROPOSED flag"
+    explanation: >
+      UCA-07 fires on systematic mechanism narration and level swing, not on naming a screen once.
+      UCA-10 fires only because another supplied artifact admits the topic is open — the paired-evidence requirement
+      prevents flagging every concrete third-party mention. Deferral-style exceptions absent, so UCA-06 stays Compliant.
+
+  - test_id: UCA-GTC-04
+    scenario: "4. Broken cross-reference: cited BR-99 absent from complete SRS/BR index (UCA-08, UCA-09; two-sided evidence)"
+    language: en
+    artifact_type: use-case-spec
+    input_context:
+      completeness_mode: full
+      id_index_provided: true
+      br_index_coverage: "Complete export: BR-01 .. BR-34 and FR-01 .. FR-40 defined; BR-99 not present"
+      fr_index_coverage: "FR-21 'Promo code validation' exists and matches subject"
+      use_case:
+        id: UC-031
+        name: "Cancel Booking"
+        primary_actor: Traveler
+        secondary_actors: [Support Staff]
+        trigger: "Traveler opens booking detail and taps Cancel"
+        preconditions: "Booking status = CONFIRMED"
+        postconditions: "Refund processed per BR-99; booking status = CANCELLED"
+        main_flow:
+          - "1. Traveler requests cancellation"
+          - "2. System applies cancellation policy per BR-99 to compute refund"
+          - "3. System validates promo code reuse per FR-21"
+          - "4. System executes refund and sets status CANCELLED"
+        extensions:
+          - "2a. Outside refund window: zero refund per BR-99, confirm with Traveler."
+    expected_criterion_statuses:
+      UCA-01: Compliant
+      UCA-02: Compliant
+      UCA-03: Compliant
+      UCA-04: Issue
+      UCA-05: Compliant
+      UCA-06: Compliant
+      UCA-07: Compliant
+      UCA-08: Issue
+      UCA-09: Issue
+      UCA-10: Compliant
+    expected_findings:
+      - criterion_id: UCA-08
+        rule_ids: [UCA-R005]
+        type: inconsistency
+        severity: major
+        confidence: high
+        evidence_items:
+          - "UC excerpt: '2. System applies cancellation policy per BR-99 to compute refund'"
+          - "Index excerpt: 'BR series defined: BR-01..BR-34; BR-99 not present in complete export'"
+      - criterion_id: UCA-09
+        rule_ids: [UCA-R005]
+        type: defect
+        severity: minor
+        confidence: high
+        evidence_items:
+          - "UC excerpt: 'extensions 2a ... zero refund per BR-99' — the only anchor making the outcome decidable is unresolvable"
+          - "Index excerpt: no BR-99 definition to substitute as anchor"
+      - criterion_id: UCA-04
+        rule_ids: [UCA-R001]
+        type: gap
+        severity: minor
+        confidence: medium
+        evidence_items:
+          - "UC excerpt: 'Refund processed per BR-99'"
+          - "Index excerpt: BR-99 absent; refund outcome therefore undefined"
+    explanation: >
+      FR-21 resolves and matches subject — no finding for it (false-positive discipline).
+      Every BR-99-dependent finding carries BOTH sides per the comparison-rule evidence contract.
+      With the anchor gone, outcomes that were qualitative-but-anchored become undecidable: UCA-09 follows UCA-08 here.
+
+  - test_id: UCA-GTC-05
+    scenario: "5. Missing-context safeguard: package contains only the use-case index row; body unsupplied/parsing failed (all Not Assessable, zero findings)"
+    language: en
+    artifact_type: use-case-spec
+    input_context:
+      completeness_mode: minimal
+      id_index_provided: false
+      parse_limitation: "Adapter produced only the row from the UC summary sheet; full spec documents were not included in the review package."
+      use_case:
+        id: UC-050
+        name: "Manage Wallet"
+    expected_criterion_statuses:
+      UCA-01: Not Assessable
+      UCA-02: Not Assessable
+      UCA-03: Not Assessable
+      UCA-04: Not Assessable
+      UCA-05: Not Assessable
+      UCA-06: Not Assessable
+      UCA-07: Not Assessable
+      UCA-08: Not Assessable
+      UCA-09: Not Assessable
+      UCA-10: Not Assessable
+    expected_findings: []
+    explanation: >
+      Even UCA-01 is Not Assessable at the unit level: the row proves an ID+name exist in the index sheet, but the
+      record itself was not supplied to evaluate goal shape or duplication within the review scope. The skill must
+      report the representation gap in limitations[] and one consolidated needs-clarification request — never
+      manufacture element-missing Issues from an index-only view.
+
+  - test_id: UCA-GTC-06
+    scenario: "6. False-positive prevention: qualitative wording anchored to BR, single screen locator, valid constraint (all pass, zero findings)"
+    language: en
+    artifact_type: use-case-spec
+    input_context:
+      completeness_mode: full
+      id_index_provided: true
+      br_index_coverage: "Complete: BR-12 'Trip notification content policy' defines required email contents per trip type"
+      use_case:
+        id: UC-008
+        name: "Confirm Booking to Traveler"
+        primary_actor: Traveler
+        secondary_actors: [Notification Service]
+        trigger: "Booking status becomes CONFIRMED"
+        preconditions: "Valid traveler email on profile"
+        postconditions: "Confirmation issued per BR-12; booking visible in My Trips"
+        main_flow:
+          - "1. System assembles the confirmation per BR-12"
+          - "2. System sends confirmation via Notification Service within the business SLA window"
+          - "3. Traveler sees confirmation on the My Trips page"
+        extensions:
+          - "2a. Notification Service unavailable: retry per BR-12 policy; if exhausted, flag booking for manual notice."
+    expected_criterion_statuses:
+      UCA-01: Compliant
+      UCA-02: Compliant
+      UCA-03: Compliant
+      UCA-04: Compliant
+      UCA-05: Compliant
+      UCA-06: Compliant
+      UCA-07: Compliant
+      UCA-08: Compliant
+      UCA-09: Compliant
+      UCA-10: Compliant
+    expected_findings: []
+    explanation: >
+      Heuristic red flags exist but context defeats them: 'within the business SLA window' is a valid business
+      constraint (not metrics invention, not design); 'sends confirmation' is qualitative but anchored to BR-12 which
+      is present in the index; 'My Trips page' named once is a locator, not widget narration; the external call HAS a
+      no-response extension (2a). Emitting zero findings here is the acceptance bar against keyword-driven dogma.
+
+  - test_id: UCA-GTC-07
+    scenario: "7. Strict ownership boundary: vague step wording -> re.requirement-quality; set duplication/scope -> re.requirement-set-quality; naming deviation without convention doc -> improvement only"
+    language: vi
+    artifact_type: use-case-spec
+    input_context:
+      completeness_mode: full
+      id_index_provided: true
+      id_convention_supplied: false
+      corpus_pattern_note: "8 of 9 use cases in the set use the series UC-0xx; this record uses UC-A1."
+      duplicate_note: "UC-A1 and UC-004 in the same set describe the same traveler goal with near-identical flows."
+      use_case:
+        id: UC-A1
+        name: "Thanh toán linh hoạt"
+        primary_actor: Traveler
+        secondary_actors: [Payment Gateway]
+        trigger: "Traveler chọn thanh toán"
+        preconditions: "Đơn đặt ở trạng thái chờ thanh toán"
+        postconditions: "Thanh toán ghi nhận; đơn chuyển CONFIRMED"
+        main_flow:
+          - "1. Hệ thống xử lý thanh toán một cách linh hoạt và phù hợp"
+          - "2. Hệ thống lưu kết quả vào cơ sở dữ liệu tập trung"
+        extensions:
+          - "1a. Gateway từ chối: báo lỗi và quay lại bước nhập."
+    expected_criterion_statuses:
+      UCA-01: Compliant
+      UCA-02: Compliant
+      UCA-03: Compliant
+      UCA-04: Compliant
+      UCA-05: Compliant
+      UCA-06: Compliant
+      UCA-07: Issue
+      UCA-08: Compliant
+      UCA-09: Compliant
+      UCA-10: Compliant
+    expected_findings:
+      - criterion_id: UCA-07
+        rule_ids: [UCA-R004]
+        type: defect
+        severity: minor
+        confidence: medium
+        evidence_excerpt: "'lưu kết quả vào cơ sở dữ liệu tập trung' — bước mô tả mechanism nội bộ thay vì trách nhiệm nghiệp vụ"
+      - criterion_id: UCA-01
+        rule_ids: [UCA-R006]
+        type: inconsistency
+        severity: minor
+        confidence: high
+        finding_type_note: improvement-suggestion
+        evidence_items:
+          - "Corpus pattern excerpt: 8/9 identifiers follow 'UC-0xx' (UC-002, UC-004, UC-008 ...)"
+          - "Deviation excerpt: 'id: UC-A1'"
+    explanation: >
+      Boundary discipline: step 1's wording ('linh hoạt và phù hợp' — vague, multi-obligation) is NOT opened as a UCA
+      finding; individual requirement wording quality belongs to re.requirement-quality (RQ-03/RQ-04). The
+      near-duplicate pair UC-A1/UC-004 is set-level organization → re.requirement-set-quality (RSQ), not UCA. The ID
+      deviation yields only an improvement-suggestion because no project convention document was supplied (UCA-R006:
+      the skill never standardizes project naming decisions). Only genuine UCA-07 mechanism narration stands.

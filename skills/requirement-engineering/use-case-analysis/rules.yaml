@@ -1,0 +1,189 @@
+# Rules — Skill: re.use-case-analysis (Schema: schemas/definitions/analysis-rule.schema.json)
+# rule_type: analysis (single evidence subject) | comparison (>=2 evidence items required per finding schema — both sides quoted).
+
+owner:
+  owner_type: skill
+  owner_id: re.use-case-analysis
+  owner_version: 0.1.0
+
+rules:
+  - rule_id: UCA-R001
+    rule_type: analysis
+    statement: "Inventory the required use-case elements (ID, goal name, actors, boundary, trigger, preconditions, main flow, postconditions/success guarantee, extensions) for each use case and report declared-but-empty or inferably-missing elements."
+    inputs: [use_case_record]
+    method: |
+      criterion_id: UCA-01, UCA-02, UCA-03, UCA-04, UCA-06
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: Field inventory over the supplied record with semantic fallback (an element may live inside flow text, not only in dedicated fields).
+      applicable_languages: ["all"]
+      applicable_artifacts: [use-case, use-case-spec]
+      evaluation_steps:
+        - '1. List which of the inventoried elements appear as fields, and which are only inferable from prose.'
+        - '2. For each element neither present nor inferable, decide Issue vs Not Assessable using the criterion-level gates (unsupplied fragment => Not Assessable).'
+        - '3. Never invent a missing element to "complete" the use case; report the gap only.'
+      evidence_expectations:
+        - "Excerpt of the record header/fields showing the absent element, or the flow start showing the implied-but-undeclared state."
+      false_positive_considerations:
+        - "An element written as prose inside the flow (trigger as step 1 intent) counts as present unless ambiguity prevents confidence."
+        - "Template columns left blank because the project marks the use case summary-level => apply the level declaration in UCA-R004, not an automatic Issue."
+      exceptions:
+        - "Abstract/superordinate use cases explicitly declared as outlines: per-element Not Applicable with note."
+    rationale: "Element completeness is the entry gate for all deeper flow checks; doing it as one inventory pass avoids contradictory partial results."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: use case essentials checklist (secondary-source recollection; no page-level citation claimed)" }
+    origin_note: "Element list fused from local-pack rubric fields and SRC-0007 essentials wording."
+    validation: { status: unvalidated, examples: ["examples/golden-test-cases.yaml#UCA-GTC-01", "examples/golden-test-cases.yaml#UCA-GTC-05"] }
+
+  - rule_id: UCA-R002
+    rule_type: analysis
+    statement: "Check main-flow step discipline: stable numbering, one obligation per step, explicit acting party per step (actor/system alternation legibility), and explicit iteration handling."
+    inputs: [main_success_scenario]
+    method: |
+      criterion_id: UCA-05, UCA-02
+      source_type: base-standard
+      normative_level: engineering-best-practice
+      detection_approach: Structural read of numbered steps; semantic test per step 'can an extension address this step alone?' Loops: search repetition wording and check for repeated item + exit condition.
+      applicable_languages: ["all"]
+      applicable_artifacts: [use-case, use-case-spec]
+      evaluation_steps:
+        - '1. Verify steps are sequentially numbered and referenced consistently (extensions point at existing numbers — cross-check feeds UCA-06).'
+        - '2. For each step, identify the acting party; flag steps whose subject is ambiguous between actor and system.'
+        - '3. Flag steps bundling multiple sequential obligations that extensions would need separately (e.g. 'enter card' + 'confirm booking' in one step).'
+        - '4. Flag 'repeat/loop until' wording lacking the repeated item and exit condition.'
+      evidence_expectations:
+        - "Exact step excerpt with its step number and the ambiguity/merge explanation."
+      false_positive_considerations:
+        - "A step naming two synchronous outcomes ('system validates and confirms availability') may be one atomic interaction; merge only flagged when failure of the halves must diverge."
+        - "Compound wording that is merely stylistic belongs to re.requirement-quality (RQ-03/RQ-04), not here — require extension-anchoring or agency harm for a UCA finding."
+      exceptions:
+        - "Project-numbered flows using letters or bullet conventions documented in the SRS are accepted if extension anchoring works."
+    rationale: "Numbering and atomicity exist to make extensions and per-step review addressable; the rule ties structure to that purpose instead of formatting dogma."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: main success scenario writing (secondary-source recollection)" }
+      - { source_id: SRC-0002, locator: "Appendix C (compound obligation heuristics)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Singular/Complete characteristics, conceptual level, no verbatim claims)" }
+    origin_note: "Adapted from local-pack 'No Missing Steps' + numbering, sharpened with the extension-anchoring test."
+    validation: { status: unvalidated, examples: ["examples/golden-test-cases.yaml#UCA-GTC-02"] }
+
+  - rule_id: UCA-R003
+    rule_type: analysis
+    statement: "Assess extension coverage: for each input/decision/external-call step, require a branch extension or explicit rationale; treat third-party no-response/timeout as a mandatory foreseeable failure class when an external system is involved."
+    inputs: [use_case_flows]
+    method: |
+      criterion_id: UCA-06, UCA-04
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: Risk-classification of steps (user input, business-rule decision point, external system call, time-sensitive hold), then presence test for anchored extensions and terminal/fallback outcome statements.
+      applicable_languages: ["all"]
+      applicable_artifacts: [use-case, use-case-spec]
+      evaluation_steps:
+        - '1. Classify main-flow steps into risk classes; list unprotected risk-class steps.'
+        - '2. Check each extension states its branch point and outcome (returns to flow at step N / terminates with guarantee G).'
+        - '3. Where an external system is called, check for a failure path covering rejection AND no-response/timeout separately or jointly with defined outcome.'
+        - '4. Accept explicit deferral ('exception flows to be authored in iteration 2') only if the artifact declares its level; still emit one improvement-suggestion Finding consolidating the deferral.'
+      evidence_expectations:
+        - "Excerpt of the unprotected step; excerpt of a floating extension if anchoring issue."
+      false_positive_considerations:
+        - "Low-risk UI display steps do not each need an extension; coverage is judged per risk class, not per step count."
+        - "Domain where availability is guaranteed by BR (e.g. BR-12 defines no-seat outcome) — extension may simply cite BR-12; that counts as covered."
+      exceptions: []
+    rationale: "Success-only flows are the most common BA defect in booking-type systems; a risk-class approach scales coverage expectations without demanding a ceremony per step."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: extensions and failure scenarios (secondary-source recollection)" }
+    origin_note: "Local-pack 'Complete Flow' + TripMate third-party payment context; no-response path added explicitly."
+    validation: { status: unvalidated, examples: ["examples/golden-test-cases.yaml#UCA-GTC-01", "examples/golden-test-cases.yaml#UCA-GTC-03"] }
+
+  - rule_id: UCA-R004
+    rule_type: analysis
+    statement: "Detect abstraction-level mixing inside the basic flow: implementation-mechanism narration (widgets, storage, protocols) presented as obligations, or granularity swings that break extension anchoring; preserve valid domain vocabulary and business constraints."
+    inputs: [main_success_scenario, project_glossary]
+    method: |
+      criterion_id: UCA-07
+      source_type: base-standard
+      normative_level: engineering-best-practice
+      detection_approach: Semantic intent-vs-mechanism test per step, using the glossary/context to disambiguate domain terms from internals; compare consecutive step granularity.
+      applicable_languages: ["all"]
+      applicable_artifacts: [use-case, use-case-spec]
+      evaluation_steps:
+        - '1. For each concrete noun, decide: domain vocabulary (payment gateway as external actor = fine) vs internal mechanism (specific API field, DB table, HTML control = design).'
+        - '2. Flag steps whose obligation is HOW rather than WHAT/RESPONSE.'
+        - '3. Measure granularity: one step spanning summary-level intent while neighbors are keystroke-level => level swing.'
+        - '4. Check the artifact for an explicit style-level declaration; honor it unless the flow contradicts it.'
+      evidence_expectations:
+        - "Excerpt of the design-mechanism step plus, for swings, the contrasting neighbor step."
+      false_positive_considerations:
+        - "Naming a screen once as a locator ('on the Booking page') is not design narration; systematic widget-level instruction is."
+        - "Performance/validity constraints stated as business limits are valid constraints, not premature design (mirror requirement-quality anti-dogma)."
+      exceptions:
+        - "Prototype/handoff documents that declare UI-flow detail as their purpose: Not Applicable with note."
+    rationale: "Premature design inside requirements freezes solutions and multiplies maintenance; but flagging any concrete term would be dogma — hence the vocabulary/mechanism split."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0003, locator: "Section 4.2 (valid constraints vs premature design, level of abstraction)" }
+      - { source_id: SRC-0007, locator: "Topic: styles/abstraction levels (secondary-source recollection)" }
+    origin_note: "Reuses requirement-quality §8 principle 4 (valid constraint vs premature design) extended to flow granularity."
+    validation: { status: unvalidated, examples: ["examples/golden-test-cases.yaml#UCA-GTC-03", "examples/golden-test-cases.yaml#UCA-GTC-06"] }
+
+  - rule_id: UCA-R005
+    rule_type: comparison
+    statement: "Resolve every requirement/business-rule/use-case ID cited inside a use case against the supplied SRS/BR ID index; a mismatch or unresolved citation is an Issue. This rule compares two evidence sides and every finding needs at least 2 evidence items per the finding schema."
+    inputs: [use_case_id_citations, requirement_id_index]
+    method: |
+      criterion_id: UCA-08, UCA-09
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: Extract citation set from use case text; lookup each against the index; on hit, optional topical match against the index entry name.
+      applicable_languages: ["all"]
+      applicable_artifacts: [use-case, use-case-spec]
+      evaluation_steps:
+        - '1. Collect all ID tokens (BR-xx, FR-xx, UC-xx, rule names with IDs) from the use case.'
+        - '2. If no index/SRS extract covering the cited series is supplied => Not Assessable observation (UCA-08), never a confirmed broken reference.'
+        - '3. For each citation absent from a complete index => Issue with both excerpts.'
+        - '4. For hits, semantic mismatch check only when clearly wrong (cites refund rule for seat-selection step).'
+      evidence_expectations:
+        - "Item 1: use case excerpt with the cited ID in context."
+        - "Item 2: index excerpt or ID-range listing demonstrating absence/mismatch."
+      false_positive_considerations:
+        - "Partial index (SRS extract of one module) => unresolved IDs are Not Assessable, since the definition may live outside the extract."
+        - "Version markers (BR-07 v2) resolve to base ID."
+      exceptions:
+        - "Forward references to a BR scheduled for next iteration, marked as planned in the artifact: improvement-suggestion, not Issue."
+    rationale: "Two-sided resolution is deterministic and cheap, catching the most consequential cross-artifact defect while staying strictly inside re.requirement-traceability's boundary (no matrix completeness here)."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (traceability of stated relationships, conceptual level, no verbatim claims)" }
+    origin_note: "Narrowed from local-pack 'Traceability' rubric row to intra-package citation resolution."
+    validation: { status: unvalidated, examples: ["examples/golden-test-cases.yaml#UCA-GTC-04"] }
+
+  - rule_id: UCA-R006
+    rule_type: comparison
+    statement: "Check ID/naming convention conformity across the reviewed use-case set only when a project convention (or the observed corpus pattern) is supplied: format, series, and numbering continuity. Comparison rule: findings need >=2 evidence items (convention source + violating record)."
+    inputs: [uc_identifier_list, id_convention_source]
+    method: |
+      criterion_id: UCA-01
+      source_type: guidance-from-practice
+      normative_level: engineering-best-practice
+      detection_approach: Pattern extraction from convention doc; when absent, infer corpus-wide pattern only if >=80% of records agree, and report deviations as improvement-suggestions (never Issues) — the skill must not standardize project-decisions.
+      applicable_languages: ["all"]
+      applicable_artifacts: [use-case, use-case-spec]
+      evaluation_steps:
+        - '1. Is an explicit ID convention supplied? If yes, compare each identifier format/series against it => Issue on deviation.'
+        - '2. If no convention: build the dominant pattern from the supplied set; deviations => improvement-suggestion with the pattern evidence.'
+        - '3. Duplicate IDs (same ID two records) => always Issue regardless of convention.'
+      evidence_expectations:
+        - "Item 1: convention excerpt (or 2+ conforming records showing the pattern)."
+        - "Item 2: the deviating/duplicate identifier excerpt."
+      false_positive_considerations:
+        - "Legacy migrated numbering declared in the artifact is exempt."
+        - "Mixed-language names are not convention deviations."
+      exceptions: []
+    rationale: "Naming discipline is genuinely a project decision; this rule only enforces what the project itself declared, plus universal duplicate-ID integrity, keeping the skill free of project-decision authority."
+    authority_level: expert-recommendation
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: consistent case naming/numbering for communication (secondary-source recollection)" }
+    origin_note: "Designed to avoid project-decision authority_level (forbidden in skills per _template/criteria.yaml note)."
+    validation: { status: unvalidated, examples: ["examples/golden-test-cases.yaml#UCA-GTC-07"] }

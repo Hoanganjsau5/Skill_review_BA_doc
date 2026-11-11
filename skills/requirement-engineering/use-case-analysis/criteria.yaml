@@ -1,0 +1,391 @@
+# Criteria — Skill: re.use-case-analysis (Schema: schemas/definitions/criterion.schema.json)
+# authority_level: official-standard | industry-best-practice | expert-recommendation | internal-convention
+# (project-decision KHÔNG được phép trong Skill; quy ước đặt tên riêng của dự án chỉ được kiểm tra hình thức, không chuẩn hóa nội dung.)
+
+owner:
+  owner_type: skill
+  owner_id: re.use-case-analysis
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: UCA-01
+    statement: "Each use case has a unique, stable identifier and a name that states a single, meaningful business goal achieved by the primary actor."
+    rationale: "Cockburn's use-case essentials treat a named user-goal and a stable name/ID as the unit of specification; a goal-less or duplicated name breaks the unit of analysis. Grounded at the conceptual level in SRC-0007 and reinforced by SRC-0001 (Clause 5.2.5 characteristics applied to the use-case record)."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: use case essentials — named goal and identifiers (secondary-source recollection; no page-level citation claimed)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (individual requirement characteristics, conceptual level, no verbatim claims)" }
+    origin_note: "Adapted from the team local pack rubric rows 'Represent Business Goal' and ID discipline (agents/.agents/skills/use-case-analysis/SKILL.md), re-grounded in SRC-0007 topics."
+    synthesis_note: |
+      name: Goal identity and ID discipline
+      evaluation_objective: Confirm every use case record carries a unique ID and a goal-stating name (actor achieves something observable).
+      pass_conditions:
+        - "A stable identifier (e.g. UC-001) is present and not reused by another use case in the same review scope."
+        - "The name reads as a goal achieved by the primary actor (verb-noun or actor-goal form), not a feature or screen label."
+      issue_conditions:
+        - "No ID or duplicate ID inside the reviewed set."
+        - "Name denotes a UI screen/component instead of an actor goal."
+      required_context:
+        - "Use case header fields (ID, name) or the use-case-spec list of names."
+      optional_context:
+        - "Project ID convention document (for format checks; see UCA-01 formatting is not enforced by default)."
+      standalone_assessable_when: "The use case header (ID + name) is present in the supplied text."
+      not_assessable_conditions:
+        - "Neither ID nor name is supplied (record exists only as prose flow without header)."
+      not_applicable_conditions:
+        - "The artifact is a narrative glossary, not a use-case specification."
+      evidence_expectations:
+        - "Exact excerpt of the ID and name line with ArtifactLocation."
+      scope_boundaries:
+        in_scope: "Presence and goal-shape of the identifier/name of THIS use case."
+        delegated_to_other_skills:
+          - "Duplicate/overlapping use cases ACROSS the set (merging decisions) -> re.requirement-set-quality (duplication, scope coverage)."
+          - "Wording quality of individual sentences -> re.requirement-quality (RQ-03 Unambiguous, RQ-04 Complete)."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-01", "examples/golden-test-cases.yaml#UCA-GTC-07"]
+
+  - criterion_id: UCA-02
+    statement: "The use case identifies its primary actor and all participating (secondary) actors, and states the system boundary the use case sits inside."
+    rationale: "Actor identification and an explicit system boundary are core essentials in SRC-0007; without them goal ownership and extension responsibility cannot be assigned."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: use case essentials — primary and supporting actors, system boundary (secondary-source recollection; no page-level citation claimed)" }
+    origin_note: "Matches the local pack task 'Xác định Actor', 'Actor Goals', 'System Boundary' (agents/.agents/skills/use-case-analysis/SKILL.md), stripped of its interactive generation steps."
+    synthesis_note: |
+      name: Actors and system boundary
+      evaluation_objective: Confirm actors who initiate, participate, or are notified are listed, and the boundary (what the system does vs. external systems/people) is discernible.
+      pass_conditions:
+        - "Primary actor named; secondary actors (including external systems) listed or correctly implied by step subjects."
+        - "Steps attribute actions to a named actor or 'System', making the boundary inferable."
+      issue_conditions:
+        - "A step is performed by an unnamed party ('the system checks with the bank' where the bank never appears as an actor)."
+        - "Primary actor absent or conflicting with the stated goal."
+      required_context:
+        - "Actor fields or the main flow text with step subjects."
+      optional_context:
+        - "Module/scope list from the SRS."
+      standalone_assessable_when: "The flow text names actors in steps."
+      not_assessable_conditions:
+        - "Flow supplied as a single undifferentiated paragraph with no actor attribution."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Excerpt of actor list plus one step excerpt showing the unattributed action."
+      scope_boundaries:
+        in_scope: "Actor enumeration and boundary legibility of this use case."
+        delegated_to_other_skills:
+          - "Permission-model correctness (does actor truly have this right) -> re.requirement-validation / feasibility-risk-assessment as policy checks."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-02"]
+
+  - criterion_id: UCA-03
+    statement: "The use case states its trigger (start condition) and preconditions that must hold before the main flow begins."
+    rationale: "Cockburn's essentials include the triggering action/condition and precondition state; missing entry conditions make flows unverifiable and hide assumptions."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: use case essentials — triggering actions and preconditions (secondary-source recollection; no page-level citation claimed)" }
+    origin_note: "Local pack lists 'Preconditions và Postconditions' as required analysis fields; trigger added from SRC-0007 topics."
+    synthesis_note: |
+      name: Trigger and preconditions
+      evaluation_objective: Confirm the use case declares what starts it (user intent, event, time) and the state assumed at entry.
+      pass_conditions:
+        - "A trigger or start-intent is stated (may sit in a Triggers column or the first flow step if unambiguous)."
+        - "Preconditions are listed or explicitly stated as none."
+      issue_conditions:
+        - "Flow begins mid-state (e.g. step 1 assumes the user is logged in and has a cart) with no precondition declared."
+        - "No indication of what initiates the use case anywhere in the record."
+      required_context:
+        - "Use case header/fields or full flow text."
+      optional_context:
+        - "Related use cases that establish the assumed state."
+      standalone_assessable_when: "Entry state is inferable from the supplied fields."
+      not_assessable_conditions:
+        - "Only a title and fragment of flow provided; entry conditions cannot be inferred."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Excerpt of the missing-field location (e.g. blank Preconditions row) or the first step implying unstated state."
+      scope_boundaries:
+        in_scope: "Declaration of entry conditions for this use case."
+        delegated_to_other_skills:
+          - "Sentence-level completeness/ambiguity of a precondition -> re.requirement-quality (RQ-03/RQ-04)."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-01", "examples/golden-test-cases.yaml#UCA-GTC-05"]
+
+  - criterion_id: UCA-04
+    statement: "The use case states postconditions and a success guarantee: the outcomes guaranteed to all actors when the use case succeeds, and the minimum guarantees on failure paths."
+    rationale: "The success guarantee is one of Cockburn's essentials and the anchor for testable outcomes (UCA-09); postconditions separate state the system owes from state it merely leaves."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: use case essentials — minimal guarantees and success guarantee (secondary-source recollection; no page-level citation claimed)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Verifiable characteristic, conceptual level, no verbatim claims)" }
+    origin_note: "Local pack requires Postconditions; success-guarantee framing added from SRC-0007 topic wording."
+    synthesis_note: |
+      name: Postconditions and guarantees
+      evaluation_objective: Confirm the record declares guaranteed outcomes for every participating actor at success, and at least minimal guarantees on failure.
+      pass_conditions:
+        - "Postconditions/success outcomes are stated or clearly the final flow step for each affected actor."
+        - "Failure paths inherit a stated or implied guarantee (e.g. booking not created, payment not charged)."
+      issue_conditions:
+        - "Success condition undefined — the flow ends without stating what is now true."
+        - "Extensions change state (e.g. partially booked trip) but no guarantee covers the partial state."
+      required_context:
+        - "Final flow steps and any Postconditions field."
+      optional_context:
+        - "Business rules that define guaranteed states."
+      standalone_assessable_when: "Final steps and postcondition fields are present."
+      not_assessable_conditions:
+        - "Flow truncated before completion."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Excerpt of last main-flow step and/or empty Postconditions field."
+      scope_boundaries:
+        in_scope: "Existence and actor-coverage of outcome statements in this use case."
+        delegated_to_other_skills:
+          - "Whether guaranteed outcomes match stakeholder needs -> re.requirement-validation (RVAL)."
+          - "Acceptance-criteria derivation -> re.acceptance-criteria (planned; record as delegation only)."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-01", "examples/golden-test-cases.yaml#UCA-GTC-06"]
+
+  - criterion_id: UCA-05
+    statement: "The main success scenario is written as numbered, atomic steps that alternate between actor and system responses, with iterations or repeated sub-sequences stated explicitly rather than implied."
+    rationale: "Step discipline (numbering, atomization, actor/system alternation) keeps flow steps individually assessable and traceable to extensions; implicit loops hide termination conditions. Supported by SRC-0002 compound-requirement heuristics and SRC-0001 Clause 5.2.5 (Singular, Complete) at conceptual level."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (compound obligations / editorial heuristics, applied to flow steps)" }
+      - { source_id: SRC-0007, locator: "Topic: writing the main success scenario step by step (secondary-source recollection; no page-level citation claimed)" }
+    origin_note: "'No Missing Steps' + numbering from local pack rubric; loop-explicitness added because TripMate-style booking flows repeat searches/segments."
+    synthesis_note: |
+      name: Main flow step discipline
+      evaluation_objective: Confirm the basic flow is decomposed into individually referenceable steps with clear agency and explicit repetition handling.
+      pass_conditions:
+        - "Steps are numbered so extensions can address '3a', '5b', etc."
+        - "Each step expresses one obligation/action by one party; system responses follow actor actions."
+        - "Repeated sequences name the item repeated and its exit condition."
+      issue_conditions:
+        - "Unnumbered prose block as main flow, or numbering that merges two obligations into one step so extensions cannot target it."
+        - "'Repeat as needed' / 'loop until done' with no termination condition."
+      required_context:
+        - "Main success scenario text."
+      optional_context:
+        - "Extension/alternative flow lists."
+      standalone_assessable_when: "Flow text is present in the review package."
+      not_assessable_conditions:
+        - "Main flow not supplied (index/summary only)."
+      not_applicable_conditions:
+        - "Record is an abstract use-case overview with no scenario by project intent (flag as representation gap instead when the spec claims full detail)."
+      evidence_expectations:
+        - "Excerpt of the merged/unnumbered step with step number context."
+      scope_boundaries:
+        in_scope: "Structural decomposition and agency alternation of flow steps."
+        delegated_to_other_skills:
+          - "Ambiguity or vagueness of an individual step sentence -> re.requirement-quality (RQ-03 Unambiguous, RQ-04 Complete) — do not open a UCA finding merely because one step's wording is vague."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-02", "examples/golden-test-cases.yaml#UCA-GTC-07"]
+
+  - criterion_id: UCA-06
+    statement: "Alternative and exception flows are attached to the steps where they branch, and cover foreseeable failures — including rejected input, business-rule violations, and third-party no-response — or explicitly record that none are expected."
+    rationale: "Cockburn treats extensions as mandatory content of an effective use case; a success-only scenario leaves failure semantics to developer invention. Local pack rubric requires Main + Alternative + Exception flows."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: extensions/alternative flows per step; failure scenarios (secondary-source recollection; no page-level citation claimed)" }
+      - { source_id: SRC-0001, locator: "Clause 6.4 (requirements validation intent, conceptual level only — used to motivate failure coverage, no verbatim claims)" }
+    origin_note: "From local pack 'Complete Flow' row plus TripMate-domain need for external-payment/no-response paths."
+    synthesis_note: |
+      name: Extension and exception coverage
+      evaluation_objective: Confirm each risky decision/input/external-call step has a named extension or an explicit no-exception rationale, including timeout/no-response for external systems.
+      pass_conditions:
+        - "Extensions are labeled by branch point (e.g. 4a) and state return-to-flow or terminate-with-outcome."
+        - "Failure-prone steps (payment, availability check, user input validation) have failure/no-response handling or explicit deferral note."
+      issue_conditions:
+        - "A step calls an external system with no success path documented for timeout/no-response."
+        - "Extensions exist but are floating (no branch step referenced)."
+      required_context:
+        - "Main flow plus extensions section."
+      optional_context:
+        - "Business rules defining violation outcomes."
+      standalone_assessable_when: "Flow and extension lists are present."
+      not_assessable_conditions:
+        - "Project declares extensions will be authored in a later pass and current phase is outline-level by convention — record as Not Applicable lifecycle gate only when the artifact states its intended level; otherwise evaluate what is written."
+      not_applicable_conditions:
+        - "Use case is an abstract/superordinate summary explicitly marked as having no flows."
+      evidence_expectations:
+        - "Excerpt of the unprotected step and, when extensions exist, of the unanchored extension."
+      scope_boundaries:
+        in_scope: "Presence, anchoring, and failure-path breadth of extensions."
+        delegated_to_other_skills:
+          - "Correctness/chosen compensation vs business policy -> re.requirement-validation (RVAL) and feasibility-risk-assessment."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-01", "examples/golden-test-cases.yaml#UCA-GTC-03"]
+
+  - criterion_id: UCA-07
+    statement: "The use case is written at a consistent requirements-level abstraction: the basic flow describes system responsibilities and intentions, not premature internal design (screens, tables, algorithms), while legitimate domain vocabulary and valid constraints are kept."
+    rationale: "SRC-0003 Section 4.2 distinguishes valid constraints from premature design; SRC-0007's style-level guidance (write user-goal cases at intent level) supports one abstraction per use case. Mixing levels breaks reuse and extension targeting."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0003, locator: "Section 4.2 (level of abstraction; valid constraints vs premature design)" }
+      - { source_id: SRC-0007, locator: "Topic: writing styles / abstraction levels (user-goal vs cloud/summary) (secondary-source recollection; no page-level citation claimed)" }
+    origin_note: "Anti-dogma tuned for BA documents: naming a screen in a step is not automatically an issue; systematic UI-mechanism narration inside the basic flow is."
+    synthesis_note: |
+      name: Abstraction-level consistency
+      evaluation_objective: Confirm steps state WHAT the system commits, not HOW internal components implement it, and that one level is held across the use case.
+      pass_conditions:
+        - "Steps express intentions/responses ('system validates the promo code'), even when domain terms are concrete."
+        - "Style level (user-goal vs summary) is consistent; occasional concrete mentions serve vocabulary, not mechanism."
+      issue_conditions:
+        - "Basic flow narrates implementation mechanics (specific UI widgets, DB writes, API payloads, internal algorithms) as obligations."
+        - "Granularity swings between summary-level and screen-level steps in one flow, breaking extension anchoring."
+      required_context:
+        - "Main flow text."
+      optional_context:
+        - "Design docs to confirm an alleged design mention is actually domain vocabulary."
+      standalone_assessable_when: "Flow text present; semantic judgment on intent-vs-mechanism per step sequence."
+      not_assessable_conditions:
+        - "Domain terms ambiguous between business vocabulary and product internals without glossary."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Excerpt of design-mechanism steps plus one adjacent intent-level step showing the swing."
+      scope_boundaries:
+        in_scope: "Level-of-abstraction consistency inside this use case's flows."
+        delegated_to_other_skills:
+          - "A single requirement sentence prescribing a solution -> re.requirement-quality (RQ-02 Appropriate, valid-constraint test)."
+          - "Architecture fit -> feasibility-risk-assessment / architecture-review profiles."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-03", "examples/golden-test-cases.yaml#UCA-GTC-06"]
+
+  - criterion_id: UCA-08
+    statement: "When the use case cites business rules or functional requirements by ID, each cited ID resolves to an entry defined in the supplied SRS/business-rule scope; unresolved or mis-cited references are issues."
+    rationale: "Reference integrity is the minimum cross-artifact contract for a use-case spec; full bidirectional trace matrices belong to re.requirement-traceability, but a UC-internal 'BR-07' that no SRS defines is a local defect this skill must catch."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 6.5 (Requirements Traceability, conceptual level, no verbatim claims — integrity of stated references)" }
+    origin_note: "Local pack 'Traceability' row (đối chiếu Use Case với FR và Business Rules), narrowed to intra-package reference resolution to avoid overlap with re.requirement-traceability."
+    synthesis_note: |
+      name: Cross-reference integrity
+      evaluation_objective: Resolve every BR/FR/UC ID referenced inside the use case against the supplied requirement index.
+      pass_conditions:
+        - "Every cited ID exists in the provided index/SRS extract and matches the referenced subject."
+      issue_conditions:
+        - "Cited ID absent from the provided scope (typo, deleted rule, wrong numbering series)."
+        - "Reference present but semantically mismatched (cites a pricing rule for a cancellation step)."
+      required_context:
+        - "Use case text with ID references AND the SRS/BR ID index or extract covering them."
+      optional_context:
+        - "RTM rows (delegated view; do not evaluate matrix completeness here)."
+      standalone_assessable_when: "Never — this criterion is inherently two-sided; without the ID index it is Not Assessable."
+      not_assessable_conditions:
+        - "No ID index/SRS extract supplied in the review package."
+        - "Index declared partial without coverage statement for the cited series."
+      not_applicable_conditions:
+        - "Use case intentionally references rules only by prose title and the project records no BR IDs (record as improvement suggestion, not Issue)."
+      evidence_expectations:
+        - "TWO evidence items minimum: (1) the use case excerpt containing the cited ID, (2) the index excerpt/list proving absence (full ID list range)."
+      scope_boundaries:
+        in_scope: "Resolution of IDs cited by this use case within supplied scope."
+        delegated_to_other_skills:
+          - "Backward/forward matrix completeness, orphans, symmetry -> re.requirement-traceability (RTR-01..RTR-06)."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-04"]
+
+  - criterion_id: UCA-09
+    statement: "The outcomes described by the use case (success guarantee and terminal extension states) are expressed so that an observer could determine whether the system met them; qualitative phrasing backed by business rules is acceptable."
+    rationale: "SRC-0001 Clause 5.2.5 Verifiable applies to flow outcomes; SRC-0002 warns against demanding metrics where behavioral/state verification suffices — this criterion forbids demanding numbers but requires decidable outcomes."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: minor
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Verifiable characteristic, conceptual level, no verbatim claims)" }
+      - { source_id: SRC-0002, locator: "Appendix C (verification alignment heuristics)" }
+    origin_note: "Fuses Cockburn success-guarantee testability with the repo's existing qualitative-verification anti-dogma (see requirement-quality §8)."
+    synthesis_note: |
+      name: Outcome testability
+      evaluation_objective: Confirm each guaranteed outcome states a decidable post-condition (state, notification, record) without inventing quantitative thresholds.
+      pass_conditions:
+        - "Outcome is observable and decidable, directly or via a referenced business rule."
+        - "Qualitative terms ('appropriate confirmation') are anchored to a BR or named artifact."
+      issue_conditions:
+        - "Terminal states undecidable ('system handles it gracefully') with no anchor."
+      required_context:
+        - "Postconditions/extensions text; BR anchors if invoked."
+      optional_context:
+        - "Existing test cases (do not evaluate their quality here)."
+      standalone_assessable_when: "Outcome statements present; anchoring optional."
+      not_assessable_conditions:
+        - "Outcomes deferred to an unsupplied later document."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Excerpt of the undecidable outcome sentence; anchor excerpt when claiming missing anchoring."
+      scope_boundaries:
+        in_scope: "Decidability of flow outcomes."
+        delegated_to_other_skills:
+          - "Testability of an isolated requirement sentence -> re.requirement-quality (RQ-07 Verifiable)."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-06", "examples/golden-test-cases.yaml#UCA-GTC-04"]
+
+  - criterion_id: UCA-10
+    statement: "Assumptions, open questions, and not-yet-decided behaviors inside the use case are explicitly flagged (e.g. an Assumptions/Open-Questions section or inline markers) rather than silently embedded as facts."
+    rationale: "The team's local-pack guard — never invent actors or use cases without evidence; proposals are labeled PROPOSED — generalizes to flagging uncertainty so reviewers and downstream agents do not treat guesses as requirements. Grounded in this repo's anti-fabrication conventions rather than an external standard, hence expert-recommendation."
+    applies_to: [use-case, use-case-spec]
+    default_severity_hint: minor
+    authority_level: expert-recommendation
+    source_refs:
+      - { source_id: SRC-0007, locator: "Topic: use cases as communication documents that expose open issues (secondary-source recollection; no page-level citation claimed)" }
+    origin_note: "Derived from agents/.agents/skills/use-case-analysis/SKILL.md 'Giới hạn' (PROPOSED labeling) and repo-wide honesty rules in SYSTEM_CONFIG conventions."
+    synthesis_note: |
+      name: Explicit assumptions and open questions
+      evaluation_objective: Confirm uncertain content is marked, so needs-clarification can be raised instead of silently accepted.
+      pass_conditions:
+        - "An assumptions/open-questions section exists or inline flags (TBD, PROPOSED, [?]) mark uncertain steps."
+        - "No marker needed when the record asserts only evidenced behavior."
+      issue_conditions:
+        - "Flow asserts undecided third-party behavior as settled (no flag, no BR anchor) AND the artifact elsewhere admits the integration is undecided."
+      required_context:
+        - "Flow/extension text plus any assumptions section."
+      optional_context:
+        - "Meeting notes showing the topic is open."
+      standalone_assessable_when: "Only when evidence of undisclosed uncertainty is present; absence of an assumptions section alone is NOT an issue."
+      not_assessable_conditions:
+        - "Cannot tell whether a statement is assumption or fact and no other artifact marks it."
+      not_applicable_conditions: []
+      evidence_expectations:
+        - "Paired excerpts: the asserted step and the artifact admitting uncertainty."
+      scope_boundaries:
+        in_scope: "Disclosure discipline within this use case."
+        delegated_to_other_skills:
+          - "Set-level unresolved-item aggregation (open questions register) -> re.requirement-set-quality."
+      depends_on_items: []
+      validation:
+        status: unvalidated
+        examples: ["examples/golden-test-cases.yaml#UCA-GTC-03"]

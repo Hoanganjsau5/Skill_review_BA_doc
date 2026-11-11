@@ -80,3 +80,68 @@ sources:
     storage: summary-only
     local_path: "knowledge/standards/SRC-0006-iso-iec-ieee-15288-2023.md"
     notes: "Provides systems engineering process-level separation between validating that requirements satisfy stakeholder needs/operational concepts in the intended environment vs verifying traceability and set coherence."
+
+  - source_id: SRC-0007
+    title: "Writing Effective Use Cases"
+    publisher: "Alistair Cockburn / Addison-Wesley"
+    authority_level: industry-best-practice
+    version: "2001 (first edition; publication month not independently verified)"
+    published_date: "2001"
+    identifier: "Addison-Wesley Professional, 2001 (ISBN not verified — confirm before pinning)"
+    retrieved_at: "2026-11-11"
+    access_note: "Knowledge sourced from memory and secondary/practitioner summaries; the full copyrighted text is NOT held in the repository. Cited only at topic level (use case essentials: named goal, actors, boundary, trigger, pre/post-conditions with success guarantee, numbered main success scenario, per-step extensions; writing styles/abstraction levels). No page numbers, clause numbers, or verbatim quotations are claimed anywhere in dependent skills."
+    storage: summary-only
+    local_path: null
+    notes: "Primary practitioner reference for re.use-case-analysis flow-quality rubric; complement (not replacement) of SRC-0001 conceptual anchors. Consider adding a knowledge/references/SRC-0007 note file before status under-review."
+
+  - source_id: SRC-0008
+    title: "Bill Wake — 'INVEST in a Good Story' (agilemodeling.com)"
+    publisher: "Agile Modeling (Bill Wake)"
+    authority_level: industry-best-practice
+    version: "2003 (article; exact date unverified)"
+    published_date: "2003"
+    identifier: "agilemodeling.com: INVEST in a Good Story (exact URL path to confirm at registration)"
+    retrieved_at: "2026-11-11"
+    access_note: "Not retrieved from the primary source for this repository; basis is memory/secondary practitioner literature. Used conceptually only (INVEST acronym; Testable/Small/Negotiable readings), always paraphrased. No verbatim quotations, page numbers, or precise dates claimed. Confirm live URL and wording before marking verified."
+    storage: summary-only
+    local_path: "knowledge/references/SRC-0008-bill-wake-invest.md (pending — local summary note not yet created)"
+    notes: "Proposed by re.acceptance-criteria (RN-0004 E7): grounds ACA-03 (Small/atomic), ACA-06 (Negotiable — AC must not freeze design), ACA-10 (Testable — demonstration identifiable)."
+
+  - source_id: SRC-0009
+    title: "Dan North — 'Introducing BDD' (2006) + Gherkin Reference (cucumber.io docs)"
+    publisher: "dannorth.net (article) / Cucumber project (Gherkin docs)"
+    authority_level: industry-best-practice
+    version: "2006 (article); Gherkin reference is living docs, version unpinned"
+    published_date: "2006 (article)"
+    identifier: "'Introducing BDD' (dannorth.net; exact path to confirm) + cucumber.io Gherkin reference"
+    retrieved_at: "2026-11-11"
+    access_note: "Conceptual/secondary basis; nothing stored locally. Used only for the precondition/action/outcome separation idea and Given/When/Then/And keyword semantics, paraphrased — no verbatim definitions or keyword tables attributed to either document. Slot vocabulary additionally cross-seeded from the cloned vendor prd-review pack (internal provenance, origin_note)."
+    storage: summary-only
+    local_path: "knowledge/references/SRC-0009-bdd-introduction-gherkin.md (pending — local summary note not yet created)"
+    notes: "Proposed by re.acceptance-criteria (RN-0004 E8): grounds ACA-02 GWT well-formedness and the Then-observable-outcome reading inside ACA-01."
+
+  - source_id: SRC-0010
+    title: "IEEE Std 830-1998 — Recommended Practice for Software Requirements Specifications"
+    publisher: "IEEE / ISO (withdrawn; superseded by ISO/IEC/IEEE 29148:2018)"
+    authority_level: official-standard
+    version: "1998 (superseded edition)"
+    published_date: "1998"
+    identifier: "IEEE Std 830-1998 (superseded by ISO/IEC/IEEE 29148:2018 = SRC-0001)"
+    retrieved_at: "2026-11-11"
+    access_note: "Standard is superseded (IEEE withdrew 830-1998 in favor of 29148, already registered as SRC-0001) and full text is not held in the repository. Content is recalled at OUTLINE level only — the recommended SRS structure (1 Introduction / 2 Overall Description / 3 Specific Requirements, incl. External Interfaces user/hardware/software/communications, System Features, Performance, Data, plus Appendices/References/Definitions front sections). No sub-clause numbers or verbatim text are claimed by dependent skills; used only as the fallback document-skeleton baseline."
+    storage: summary-only
+    local_path: null
+    notes: "Outline baseline for re.srs-review SRV-01/SRV-04/SRV-05/SRV-06; superseded standard — prefer SRC-0001 for any characteristic-level claims. Consider creating a knowledge/standards/SRC-0010 note before status under-review."
+
+  - source_id: SRC-0011
+    title: "Software Requirements (3rd edition)"
+    publisher: "Karl Wiegers & Joyel Beatty (as cited in team materials as 'Wiegers & Gilbert'), Addison-Wesley / Microsoft Press"
+    authority_level: industry-best-practice
+    version: "3rd edition (2010)"
+    published_date: "2010"
+    identifier: "ISBN not verified — confirm before pinning"
+    retrieved_at: "2026-11-11"
+    access_note: "Knowledge sourced from memory and secondary/practitioner summaries; the full copyrighted text is NOT held in the repository. Cited only at topic level (SRS content elements: document identification & revision history, feature-based organization, consistent requirement identification, referencing external documents whose sources must stay retrievable, requirements-vs-design separation). No page numbers, chapter quotations, or verbatim text are claimed anywhere in dependent skills. HONESTY FLAG: team materials cite 'Wiegers & Gilbert' but the 3rd ed. (2010) co-author is Joyel Beatty (Gilbert co-authored 2nd ed. 2003) — confirm before pinning."
+    storage: summary-only
+    local_path: null
+    notes: "Practitioner backbone for re.srs-review SRV-02/SRV-03/SRV-05/SRV-07/SRV-08 industry-best-practice levels; complement (not replacement) of SRC-0001/SRC-0010 structural anchors."

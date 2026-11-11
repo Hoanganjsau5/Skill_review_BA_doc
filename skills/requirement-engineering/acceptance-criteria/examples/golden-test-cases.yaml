@@ -1,0 +1,361 @@
+# Golden Test Cases — Skill: re.acceptance-criteria
+# Coverage dimensions:
+#   - Per-item wording issues: unquantified/vague (ACA-01/08), GWT slot errors (ACA-02), bundled behaviors (ACA-03)
+#   - Set-level: bidirectional anchor gaps (ACA-04), missing error-path ACs (ACA-05), obligation creep + AC contradiction (ACA-06/09), id collisions (ACA-07), placeholder method (ACA-10)
+#   - Safeguards: Not Assessable when owner inventory/scope/external plans absent (GTC-06), Not Applicable by declared format (GTC-09)
+#   - False-positive prevention: quantified-but-wrong-owner routed to ownership, not ambiguity (GTC-05); 'nhanh chóng' + bound suppressed (GTC-09)
+#   - Strict ownership boundary: requirement-text defects delegated, zero findings here (GTC-10)
+#   - Languages: en + vi (GTC-02, GTC-09); golden all-Compliant (GTC-08)
+
+suite_id: re.acceptance-criteria.golden-suite
+skill_id: re.acceptance-criteria
+skill_version: 0.1.0
+status_enum: [Compliant, Issue, Not Assessable, Not Applicable]
+
+test_cases:
+  - test_id: ACA-GTC-01
+    scenario: "Unquantified outcome + vague qualifier in one AC (ACA-01, ACA-08, ACA-10)"
+    language: en
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      declared_ac_format: bullet-list
+      declared_scope: "Release R1 — booking module"
+      owner_items:
+        - { id: FR-101, type: FR, title: "Search hotel availability", text: "The system shall return availability results for a searched city and date range." }
+      acceptance_criteria:
+        - { id: AC-101.1, owner: FR-101, text: "Then the search results load quickly and show relevant hotels." }
+    expected_criterion_statuses:
+      ACA-01: Issue
+      ACA-02: Not Applicable
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Not Applicable
+      ACA-06: Compliant
+      ACA-07: Compliant
+      ACA-08: Issue
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings:
+      - { criterion_id: ACA-01, rule_ids: [ACA-R001], type: defect, severity: major, confidence: high, evidence_excerpt: "Then the search results load quickly and show relevant hotels." }
+      - { criterion_id: ACA-08, rule_ids: [ACA-R008], type: ambiguity, severity: major, confidence: high, evidence_excerpt: "quickly ... relevant hotels" }
+    explanation: >
+      'Quickly' is a quantity-sensitive bound with no threshold (ACA-01) and 'relevant' admits two
+      accept/reject readings (ACA-08: reviewer A accepts first-10-results, reviewer B requires filters
+      applied). Each finding must carry the competing interpretations. ACA-02 Not Applicable: declared
+      format is bullet-list, no GWT keywords. ACA-10 Compliant: single AC, plain functional outcome,
+      implicit search-test demonstration acceptable under the AC's simplicity (rule escalation needs a
+      real ambiguity, absent here). ACA-05 Not Applicable: FR-101 as written declares no failure/boundary mode.
+
+  - test_id: ACA-GTC-02
+    scenario: "Vietnamese suite: bundled behaviors via 'và' + happy-path-only despite declared validation rules (ACA-03, ACA-05)"
+    language: vi
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      declared_ac_format: bullet-list
+      declared_scope: "Sprint 3 — đặt phòng"
+      owner_items:
+        - { id: FR-210, type: FR, title: "Tạo booking", text: "Hệ thống cho phép user đã đăng nhập tạo booking với ngày nhận phòng trong tương lai; từ chối booking có ngày nhận phòng quá 12 tháng." }
+      acceptance_criteria:
+        - { id: AC-210.1, owner: FR-210, text: "Người dùng tạo booking thành công và hệ thống gửi email xác nhận và lưu booking vào cơ sở dữ liệu." }
+        - { id: AC-210.2, owner: FR-210, text: "Giao diện hiển thị thông báo 'Đặt phòng thành công'." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Not Applicable
+      ACA-03: Issue
+      ACA-04: Compliant
+      ACA-05: Issue
+      ACA-06: Compliant
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings:
+      - { criterion_id: ACA-03, rule_ids: [ACA-R003], type: defect, severity: minor, confidence: high, evidence_excerpt: "tạo booking thành công và hệ thống gửi email xác nhận và lưu booking vào cơ sở dữ liệu" }
+      - { criterion_id: ACA-05, rule_ids: [ACA-R005], type: gap, severity: major, confidence: high, evidence_excerpt: "từ chối booking có ngày nhận phòng quá 12 tháng (FR-210) — không AC nào acceptance cho đường từ chối" }
+    explanation: >
+      AC-210.1 passes the independent-failure test: email delivery can fail while booking creation
+      passes — two concerns bundled (split recommended; the data+storage facets of one transaction
+      would be allowed as one decision, but the email channel is a distinct obligation). FR-210 text
+      DECLARES a validation/boundary mode (>12 tháng) with no negative-path AC (ACA-05) — the mode is
+      taken from the owner item text, not invented. Email-in-AC vs owner item that never mentions email
+      would be an ACA-06 candidate; here the AC's email conjunct duplicates FR-side obligation ambiguity,
+      owned by re.requirement-quality if the FR text itself is imprecise — recorded as delegation, not creep,
+      since booking systems conventionally confirm. Keep statuses honest: ACA-06 Compliant with note.
+
+  - test_id: ACA-GTC-03
+    scenario: "Malformed Given/When/Then: action inside Given, precondition inside Then, missing Then on second scenario (ACA-02)"
+    language: en
+    artifact_type: user-story
+    input_context:
+      completeness_mode: full
+      declared_ac_format: gherkin
+      declared_scope: "Backlog item US-320 (payment retry)"
+      owner_items:
+        - { id: US-320, type: user-story, title: "Payment retry after gateway timeout", text: "As a user, when the payment gateway times out, I want the app to retry once and then show a clear retry option." }
+      acceptance_criteria:
+        - { id: AC-320.1, owner: US-320, text: "Given the user taps Pay and the gateway does not respond within 30s / When the retry is triggered / Then the user sees the order as processing" }
+        - { id: AC-320.2, owner: US-320, text: "Given the app has already retried once / When the second call fails / (no Then)" }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Issue
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Compliant
+      ACA-06: Compliant
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings:
+      - { criterion_id: ACA-02, rule_ids: [ACA-R002], type: structure, severity: minor, confidence: high, evidence_excerpt: "Given the user taps Pay and the gateway does not respond within 30s / Then ..." }
+      - { criterion_id: ACA-02, rule_ids: [ACA-R002], type: gap, severity: minor, confidence: high, evidence_excerpt: "AC-320.2 — scenario without Then (expected result undefined)" }
+    explanation: >
+      'the user taps Pay' is an actor action parked in Given (slot error) and AC-320.2 has no observable
+      Then — both ACA-02 Issues under a declared Gherkin format. Everything else passes: the timeout
+      precondition is bounded (30s), the story declares its failure mode (gateway timeout) and the suite
+      covers it (ACA-05 Compliant), anchors resolve to US-320 (ACA-04).
+
+  - test_id: ACA-GTC-04
+    scenario: "Bidirectional gaps: FR with zero AC + AC anchored to nonexistent FR + duplicate AC ids (ACA-04, ACA-07)"
+    language: en
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      declared_ac_format: table
+      declared_scope: "Module: notifications (FR-401..FR-403 fully listed in package)"
+      owner_items:
+        - { id: FR-401, type: FR, title: "Push notification on trip start", text: "The system shall push a trip-start notification." }
+        - { id: FR-402, type: FR, title: "Email on booking cancel", text: "The system shall email a cancellation confirmation." }
+        - { id: FR-403, type: FR, title: "Notification preference center", text: "The system shall let users toggle notification channels." }
+      acceptance_criteria:
+        - { id: AC-401.1, owner: FR-401, text: "Push arrives within 60s of trip start time." }
+        - { id: AC-401.1, owner: FR-403, text: "Toggle state persists across app restarts." }
+        - { id: AC-404.1, owner: FR-499, text: "Cancellation email contains booking code." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Not Applicable
+      ACA-03: Compliant
+      ACA-04: Issue
+      ACA-05: Not Applicable
+      ACA-06: Compliant
+      ACA-07: Issue
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings:
+      - { criterion_id: ACA-04, rule_ids: [ACA-R004], type: gap, severity: major, confidence: high, evidence_excerpt: "FR-402 has zero ACs; AC-404.1 references FR-499 absent from package" }
+      - { criterion_id: ACA-07, rule_ids: [ACA-R007], type: defect, severity: minor, confidence: high, evidence_excerpt: "duplicate id AC-401.1 used for two different criteria" }
+    explanation: >
+      Full-scope package allows confirmed gaps (no partial-safeguard excuse): FR-402 unmatched and
+      AC-404.1 broken anchor (ACA-04 both directions). The same broken anchor is NOT an ambiguity or
+      verifiability issue — the AC itself is quantified and clear (ACA-01/08 Compliant). Duplicate id
+      breaks unambiguous reference (ACA-07). Table format declared → ACA-02 Not Applicable with
+      justification.
+
+  - test_id: ACA-GTC-05
+    scenario: "False-positive prevention: quantified-but-wrong-owner AC is an ownership finding, never an ambiguity finding (ACA-08 suppressed; ACA-04/ACA-06 own it)"
+    language: en
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      declared_ac_format: bullet-list
+      declared_scope: "Module: search"
+      owner_items:
+        - { id: FR-501, type: FR, title: "Hotel search", text: "The system shall search hotels by city, dates, and party size." }
+      acceptance_criteria:
+        - { id: AC-501.1, owner: FR-501, text: "Then the search results page shows no more than 20 hotels for the searched city and dates." }
+        - { id: AC-501.2, owner: FR-501, text: "Booking payment completes within 5 seconds under normal network conditions." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Not Applicable
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Not Applicable
+      ACA-06: Issue
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings:
+      - { criterion_id: ACA-06, rule_ids: [ACA-R006], type: inconsistency, severity: major, confidence: high, evidence_excerpt: "AC-501.2 payment obligation — FR-501 declares search only" }
+    explanation: >
+      AC-501.2 is perfectly quantified and observable (ACA-01/08 must NOT fire — no competing
+      interpretation exists about 5 seconds) yet it accepts a behavior its owner item never requires:
+      a booking-payment obligation attached to a search requirement. The obligation diff (ACA-R006)
+      owns this as scope creep / mis-anchored acceptance. Also 'normal network conditions' bounded
+      by project glossary? NOT provided — glossary absence alone does not flip ACA-08 to Not Assessable
+      because the two-reading test fails to produce divergent decisions on payment completion; log it as
+      a clarification note only if the reviewer genuinely splits. Anchor FR-501 exists, so ACA-04
+      stays Compliant (coverage direction fine); the defect is semantic ownership, i.e., ACA-06.
+
+  - test_id: ACA-GTC-06
+    scenario: "Not Assessable safeguards: no owner inventory, no scope declaration, external test plan referenced but absent (ACA-04/05/06/10)"
+    language: en
+    artifact_type: acceptance-criteria
+    input_context:
+      completeness_mode: partial
+      declared_ac_format: bullet-list
+      declared_scope: null
+      owner_items: []
+      acceptance_criteria:
+        - { id: AC-9, owner: null, text: "The export job completes and writes an audit record; method per project test plan." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Not Applicable
+      ACA-03: Compliant
+      ACA-04: Not Assessable
+      ACA-05: Not Assessable
+      ACA-06: Not Assessable
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Not Assessable
+      ACA-10: Not Assessable
+    expected_findings: []
+    expected_clarifications:
+      - "Owner-item enumeration and declared review scope required to evaluate ACA-04/05/06."
+      - "Project test plan referenced by AC-9 must be included to evaluate ACA-10."
+    explanation: >
+      The partial-package safeguard: a single unanchored AC with no inventory MUST NOT produce
+      'missing ACs everywhere' or 'orphan' confirmed defects — resolvability itself is undefined, hence
+      Not Assessable. Pairwise ACA-09 needs >=2 comparable items; with one AC it is Not Assessable
+      for comparison, not Not Applicable. Wording criteria still judge AC-9 on its own text (outcome
+      decidable, ids fine, no vague qualifier). Zero confirmed findings is the correct output.
+
+  - test_id: ACA-GTC-07
+    scenario: "Design lock-in in an AC + contradictory thresholds between two ACs on the same condition (ACA-06, ACA-09)"
+    language: en
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      declared_ac_format: bullet-list
+      declared_scope: "Module: loyalty points"
+      owner_items:
+        - { id: FR-601, type: FR, title: "Earn loyalty points", text: "The system shall award points on completed bookings and points expire according to the loyalty policy." }
+      acceptance_criteria:
+        - { id: AC-601.1, owner: FR-601, text: "Points are written to the MySQL table loyalty_balances in the same DB transaction as the booking record." }
+        - { id: AC-601.2, owner: FR-601, text: "Unused points expire 24 months after the last earned date." }
+        - { id: AC-601.3, owner: FR-601, text: "Unused points expire 48 months after the last earned date." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Not Applicable
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Not Applicable
+      ACA-06: Issue
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Issue
+      ACA-10: Compliant
+    expected_findings:
+      - { criterion_id: ACA-06, rule_ids: [ACA-R006], type: defect, severity: major, confidence: high, evidence_excerpt: "MySQL table loyalty_balances ... same DB transaction" }
+      - { criterion_id: ACA-09, rule_ids: [ACA-R009], type: inconsistency, severity: major, confidence: high, evidence_excerpt: "AC-601.2 vs AC-601.3 — same condition, 24 vs 48 months" }
+    explanation: >
+      AC-601.1 makes storage technology an acceptance condition where the owner item specifies only
+      policy expiry — premature design lock-in (ACA-06); the same mechanism would be exempt if an
+      approved design constraint doc were supplied (downgrade path). AC-601.2/3 share the identical
+      trigger condition (expiry of unused points) with incompatible bounds — a contradiction requiring
+      both verbatim excerpts as evidence. The 24-vs-48 divergence is duplication-drift risk: even after
+      one is deleted, wording divergence signals independent-maintenance hazard (documented in
+      explanation, not a second finding).
+
+  - test_id: ACA-GTC-08
+    scenario: "Golden all-Compliant suite: bounded GWT, atomic, bidirectional coverage, declared error path covered, ids + methods present"
+    language: en
+    artifact_type: user-story
+    input_context:
+      completeness_mode: full
+      declared_ac_format: gherkin
+      declared_scope: "US-700 (package)"
+      owner_items:
+        - { id: US-700, type: user-story, title: "Cancel booking with refund", text: "As a user I can cancel a confirmed booking; cancellation within 24h of confirmation is refunded in full; after 24h no refund. Payment gateway failure during refund must show retryable state." }
+      acceptance_criteria:
+        - { id: AC-700.1, owner: US-700, method: "integration test + data oracle", text: "Given a confirmed booking cancelled 10 hours after confirmation / When the user confirms cancellation / Then the booking status becomes 'Cancelled', a refund record of the full amount is created, and the user sees 'Refund initiated'." }
+        - { id: AC-700.2, owner: US-700, method: "integration test", text: "Given a confirmed booking cancelled 30 hours after confirmation / When the user confirms cancellation / Then the booking status becomes 'Cancelled' and the user sees 'No refund after 24 hours'." }
+        - { id: AC-700.3, owner: US-700, method: "fault-injection test", text: "Given the refund gateway returns TIMEOUT during a within-24h cancellation / When the user retries the refund once and it still fails / Then the booking stays 'Cancelled', the refund state is 'Retryable', and the user sees a retry option with the support ticket id." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Compliant
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Compliant
+      ACA-06: Compliant
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings: []
+    explanation: >
+      Reference shape for calibration: slot content correct; And-style facets (status + refund record +
+      feedback) treated as one decision per ACA-R003 facet rule; all three declared failure/boundary
+      modes (in-window, out-of-window, gateway failure) covered; bounds (24h/10h/30h) refine the owner
+      item exactly; unique ids and explicit methods matching outcome kinds (data oracle, fault injection).
+      Zero findings and all statuses Compliant is the expected output.
+
+  - test_id: ACA-GTC-09
+    scenario: "Vietnamese suite, declared table format: GWT Not Applicable + 'nhanh chóng' with immediate bound suppressed by anti-FP gate (ACA-02 NA, ACA-08 compliant-by-suppression)"
+    language: vi
+    artifact_type: acceptance-criteria-spec
+    input_context:
+      completeness_mode: full
+      declared_ac_format: "bảng (cols: Điều kiện / Hành động / Kết quả mong đợi / Cách kiểm chứng)"
+      declared_scope: "Sprint 5 — tìm kiếm"
+      owner_items:
+        - { id: FR-810, type: FR, title: "Tìm kiếm khách sạn", text: "Hệ thống trả về danh sách khách sạn theo thành phố và ngày nhận/trả phòng; số kết quả mỗi trang không quá 20." }
+      acceptance_criteria:
+        - { id: TC-810-01, owner: FR-810, text: "Điều kiện: user nhập 'Đà Nẵng', ngày hợp lệ. Hành động: bấm Tìm. Kết quả: danh sách <= 20 khách sạn cùng thành phố hiển thị nhanh chóng, tối đa 2 giây trên mạng 4G. Cách kiểm chứng: automation test có log thời gian." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Not Applicable
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Not Applicable
+      ACA-06: Compliant
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings: []
+    explanation: >
+      The suite's wording ('hiển thị nhanh chóng, tối đa 2 giây') contains a vi vague-qualifier signal
+      but the bound follows immediately — the language-pack's own anti-FP rule suppresses any ACA-08
+      Issue; a reviewer who fired here would be a false positive. ACA-02 Not Applicable is justified by
+      the declared table format (columns carry the three slots), not by evaluation convenience.
+      ACA-05 Not Applicable: FR-810 declares no failure/boundary mode beyond the page-size cap, which
+      is a positive-path bound already accepted in TC-810-01.
+
+  - test_id: ACA-GTC-10
+    scenario: "Strict ownership boundary: story REQUIREMENT text is ambiguous and set-scope looks thin, but the AC suite itself is clean — zero findings here; delegations recorded"
+    language: en
+    artifact_type: user-story
+    input_context:
+      completeness_mode: full
+      declared_ac_format: bullet-list
+      declared_scope: "US-900 (package)"
+      owner_items:
+        - { id: US-900, type: user-story, title: "Smart suggestions", text: "As a user I want the app to handle suggestions smartly and support users easily. (no acceptance detail; scope of 'suggestions' undefined across the product set)" }
+      acceptance_criteria:
+        - { id: AC-900.1, owner: US-900, method: "manual test scenario", text: "Given the user opens the home screen with >=3 upcoming trips / When the suggestions panel renders / Then up to 3 trip cards are shown in ascending start-date order." }
+        - { id: AC-900.2, owner: US-900, method: "manual test scenario", text: "Given the user has no upcoming trips / When the suggestions panel renders / Then the panel shows the 'Plan your next trip' placeholder and no trip cards." }
+    expected_criterion_statuses:
+      ACA-01: Compliant
+      ACA-02: Compliant
+      ACA-03: Compliant
+      ACA-04: Compliant
+      ACA-05: Not Applicable
+      ACA-06: Compliant
+      ACA-07: Compliant
+      ACA-08: Compliant
+      ACA-09: Compliant
+      ACA-10: Compliant
+    expected_findings: []
+    expected_delegations:
+      - "US-900 statement wording ('handle smartly', 'support easily' — no observable behavior in the requirement text itself) -> re.requirement-quality (RQ-03/RQ-07)."
+      - "Undefined product scope of 'suggestions' across the requirement set (is other scope missing?) -> re.requirement-set-quality (RSQ-01) once the set package is available."
+    explanation: >
+      The suite ACs are decidable, atomic, anchored, method-stated; the story's vague PROSE is not an
+      AC-section string, so ACA-08 must not fire here — this is the calibration case proving the
+      AC-suite lens. Boundary crossings become delegated_observations with target skill ids, never
+      borrowed findings. The suite's two ACs also cover both declared states of the panel; no failure
+      mode is declared in the provided text, hence ACA-05 Not Applicable per item.

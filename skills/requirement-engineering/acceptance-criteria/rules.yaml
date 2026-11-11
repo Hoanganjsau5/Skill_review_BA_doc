@@ -1,0 +1,332 @@
+# Analysis & Comparison Rules — Skill: re.acceptance-criteria (Schema: schemas/definitions/analysis-rule.schema.json)
+# Operational detection methods for criteria ACA-01..ACA-10. Rules carry the false-positive gates;
+# criteria carry the normative statements. Interactive authoring prompts from the team/vendor source
+# material were converted into declarative detection steps only.
+
+owner:
+  owner_type: skill
+  owner_id: re.acceptance-criteria
+  owner_version: 0.1.0
+
+rules:
+  - rule_id: ACA-R001
+    rule_type: analysis
+    statement: "Verifiability of each AC is judged by the decidable-outcome test (could two reviewers split on pass/fail of the same observation), not by presence of numbers."
+    inputs: [ac_statement, glossary_or_measurement_conventions]
+    method: |
+      criterion_id: ACA-01
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: decidable-outcome-test
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria, acceptance-criteria-spec, user-story]
+      evaluation_steps:
+        1. Extract the claimed observable outcome of the AC (what a reviewer would see/measured to call it accepted).
+        2. If no outcome is extractable ('works correctly', 'as expected'), record Issue.
+        3. If the outcome is quantity-sensitive, look for a stated or explicitly-referenced threshold/bound; absence -> Issue.
+        4. If the outcome is behavioral (correct screen, correct record state), accept it without demanding numerics (anti-dogma gate).
+        5. Where a definition reference is cited but the definition is outside the package, set Not Assessable and raise a clarification request.
+      evidence_expectations: "Verbatim AC excerpt plus the one-sentence demonstration of the interpretive gap (or the satisfied bound)."
+      false_positive_considerations:
+        - "A qualitative AC is NOT automatically a defect: 'Then user sees confirmation toast after payment success' is observable without numerics."
+        - "Numeric-but-meaningless thresholds (arbitrary magic number with no stakeholder basis) are feasibility/validation concerns delegated to re.requirement-validation, not an ACA-01 Issue here."
+      exceptions:
+        - "Prototypes/exploratory stories where the team explicitly declares investigation acceptance (recorded rationale) -> Not Applicable with citation."
+    rationale: "Operationalizes 29148's Verifiable characteristic (conceptual) for AC text and blocks the keyword-matching failure mode of flagging every non-numeric AC."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Verifiable; conceptual paraphrase)" }
+      - { source_id: SRC-0002, locator: "Appendix C (verification alignment; heuristic paraphrase)" }
+    origin_note: "Detection approach adapted from the vendor requirement-quality-checklist 'undefined thresholds' items, converted from authoring prompts to a review test."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-01", "examples/golden-test-cases.yaml#ACA-GTC-08"]
+
+  - rule_id: ACA-R002
+    rule_type: analysis
+    statement: "GWT keyword positions are parsed per scenario; content typed as precondition/action/outcome is checked against its keyword slot using the vendor-prescribed pattern."
+    inputs: [ac_statement, declared_ac_format]
+    method: |
+      criterion_id: ACA-02
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: gwt-slot-content-typing
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria, user-story]
+      evaluation_steps:
+        1. Confirm the AC visibly uses Given/When/Then (or the project's declared equivalent keywords); otherwise Not Applicable citing declared format.
+        2. Type each clause's content: state-before (precondition), actor-action, observable-result.
+        3. Flag misplacements: action in Given; precondition or intent in Then; missing Then entirely.
+        4. Allow And-clauses that extend the same outcome with complementary evidence (state change + feedback) — per the vendor pattern.
+        5. Sequential multi-When scenarios pass when order is explicit.
+      evidence_expectations: "Excerpt of the mispositioned clause(s) with the keyword labels preserved."
+      false_positive_considerations:
+        - "Business-language Given like 'Given the user has an active subscription' is a valid precondition, not a misplaced action."
+        - "Localize-then-fail: never reformat a project's declared non-English keywords into English to force a match."
+      exceptions:
+        - "Table-format ACs with dedicated precondition/action/expected columns satisfy the same separation intent -> evaluate ACA-01/ACA-03 only; ACA-02 Not Applicable."
+    rationale: "BDD/Gherkin value comes from separation of the three parts (SRC-0009 conceptual); the vendor pattern prescribes the slot semantics used here."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0009, locator: "BDD/Gherkin scenario structure (conceptual; memory/secondary basis)" }
+    origin_note: "Slot vocabulary adapted from yihannangua business-rule-checklist Suggested Acceptance Criteria Pattern (cloned vendor research pack)."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-03"]
+
+  - rule_id: ACA-R003
+    rule_type: analysis
+    statement: "Conjunctions inside an AC are resolved by the independent-failure test: if conjuncts can pass/fail separately for different functional concerns, the AC bundles multiple behaviors."
+    inputs: [ac_statement, owner_item_scope]
+    method: |
+      criterion_id: ACA-03
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: independent-failure-split-test
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria, acceptance-criteria-spec, user-story]
+      evaluation_steps:
+        1. Enumerate conjuncts joined by và/and/or/commas-as-list.
+        2. For each pair, ask: could a reviewer record 'first passes, second fails' from one observation run?
+        3. If yes and the concerns are distinct features/channels/artifacts -> Issue (split recommended).
+        4. If the conjuncts are complementary evidence of one event (record state + matching feedback) -> pass (atomic).
+        5. 'and/or' connectors leaving the accepted alternative undefined escalate to ACA-08 ambiguity as well.
+      evidence_expectations: "Excerpt with conjunct boundaries marked and the proposed split wording."
+      false_positive_considerations:
+        - "Do not split data+feedback And-clauses of one transaction (the vendor pattern prescribes them): 'Then order becomes Paid AND user sees confirmation' is one acceptance decision."
+        - "The team's Atomicity wording ('một chức năng hoặc ràng buộc duy nhất') targets one concern per item, not one grammatical clause."
+      exceptions:
+        - "Negative-path suites legitimately bundle precondition checks into one guard AC when failure of any guard yields the identical rejection outcome."
+    rationale: "Implements 29148 Singular (conceptual) and NASA compound-requirement warning at AC granularity."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Singular; conceptual paraphrase)" }
+      - { source_id: SRC-0002, locator: "Appendix C (compound requirements; paraphrase)" }
+    origin_note: "Split-test procedure synthesized; facet-allowance rule explicitly derived from analyzing the vendor GWT pattern's And-clauses so the prescribed pattern does not self-violate."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-02", "examples/golden-test-cases.yaml#ACA-GTC-08"]
+
+  - rule_id: ACA-R004
+    rule_type: comparison
+    statement: "Two-set comparison (owner items in declared scope vs ACs with resolved anchors) in both directions; unmatched cells on either side are coverage gaps only when completeness_mode is full."
+    inputs: [owner_item_list, ac_list_with_anchors, declared_scope, completeness_mode]
+    method: |
+      criterion_id: ACA-04
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: bidirectional-anchor-set-diff
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria-spec, acceptance-criteria, user-story]
+      evaluation_steps:
+        1. Enumerate owner items inside the DECLARED review scope only (release/module filters applied).
+        2. Normalize each AC's anchor (explicit id reference, or structural containment 'AC list under story X').
+        3. Diff both ways: owner items with zero ACs -> coverage gap; ACs with unresolvable/absent anchors -> orphan AC.
+        4. With completeness_mode: partial, gaps relative to unprovided sections become Not Assessable observations, never confirmed defects (crucial safeguard).
+        5. Section-level or vague anchors count as Issue only when no structural containment disambiguates them.
+      evidence_expectations: "Two lists (unmatched owner ids; unmatched AC ids) plus the package inventory used for resolution."
+      false_positive_considerations:
+        - "An AC anchored to an id absent HERE may exist in the unshared backlog: that is an ownership finding (Not Assessable/clarification), not proof of a nonexistent requirement."
+        - "NFR ACs living in a separate performance spec provided as part of the package legitimately anchor multiple owner items."
+      exceptions:
+        - "Explicitly deferred features (declared out-of-scope) are removed from the owner-item set before diffing."
+    rationale: "Bidirectional coverage is the AC-suite analog of set Completeness; narrower by design than RSQ-02/RTR rules to keep ownership single."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Complete; conceptual paraphrase)" }
+      - { source_id: SRC-0004, locator: "Set characteristics (Complete; paraphrase)" }
+    origin_note: "Method mirrors re.requirement-traceability flow-map comparison (RTR-R001..R004 lineage) restricted to AC-to-owner edges; interactive backlog prompts from team material were stripped."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-04", "examples/golden-test-cases.yaml#ACA-GTC-06"]
+
+  - rule_id: ACA-R005
+    rule_type: analysis
+    statement: "Failure modes are enumerated ONLY from owner-item text or supplied exception flows; presence of negative/edge ACs is then checked per enumerated mode. Inventing plausible failure modes from general experience is forbidden."
+    inputs: [owner_item_text, ac_list, exception_flow_description]
+    method: |
+      criterion_id: ACA-05
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: declared-failure-mode-ac-check
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria-spec, acceptance-criteria, user-story]
+      evaluation_steps:
+        1. For each owner item, extract explicitly declared failure/boundary modes (validation rules, limits, external calls, permission checks, conflicting states).
+        2. Map the item's AC set; determine whether at least one AC decides acceptance for each significant declared mode.
+        3. Absence of an AC for a declared mode -> Issue; absence for an undeclared mode -> no finding (do not speculate).
+        4. Identical failure handling across items may be covered by one cross-referenced suite-level AC.
+        5. If owner items are absent from the package -> Not Assessable.
+      evidence_expectations: "Owner-item excerpt naming the mode, plus the AC excerpt set (or documented absence) for that anchor."
+      false_positive_considerations:
+        - "'Two reasonable reader' caution: a general 'system errors show retry message' AC covers multiple technical failures only when the handling is actually uniform; per-mode differentiation (validation vs outage) needs per-mode ACs."
+        - "Static display content with no state change/external call: Not Applicable, justified per item."
+      exceptions:
+        - "Team-declared risk acceptance for a specific failure path (documented) -> observation, not Issue."
+    rationale: "Happy-path-only suites cannot reject defective builds at acceptance; vendor checklists prescribe failure/exception/retry/rollback rows."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (boundary/exception heuristics; paraphrase)" }
+    origin_note: "Converted from the yihannangua business-rule-checklist failure/exception rows (vendor research pack) into a declarative presence check."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-02", "examples/golden-test-cases.yaml#ACA-GTC-06"]
+
+  - rule_id: ACA-R006
+    rule_type: comparison
+    statement: "Obligation diff between AC text and owner-item text: obligations, numerics, channels, integrations, or named mechanisms present only in the AC are creep candidates; measurement/setup constraints are exempt."
+    inputs: [ac_statement, owner_item_text, approved_design_constraints]
+    method: |
+      criterion_id: ACA-06
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: ac-vs-owner-obligation-diff
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria, acceptance-criteria-spec, user-story]
+      evaluation_steps:
+        1. List obligations/limits in the owner item; list obligations/limits asserted by the AC.
+        2. AC-side-only items are candidates; check each against exemption (setup data, environment, measurement method).
+        3. Tightening or loosening numeric bounds beyond the owner item is creep unless the owner item delegates the bound to the AC explicitly.
+        4. Named implementation mechanisms (schema, endpoint, vendor service) as acceptance CONDITIONS -> premature-design Issue; as permitted-constraint evidence with rationale -> observation for re.requirement-validation / design skills.
+        5. When approved design docs supplied show the mechanism is an accepted project constraint, downgrade to compliant with note.
+      evidence_expectations: "Both verbatim excerpts (AC and owner item) plus the specific AC-only obligation phrase."
+      false_positive_considerations:
+        - "A quantified AC refining a vague owner item ('responds quickly' -> 'within 2s') is an improvement proposal that belongs in a clarification request; report creep only when the bound changes what is owed (new channel/record/integration)."
+        - "PROPOSED-labeled additions per team convention are excluded from creep findings (recorded as suggestion). "
+      exceptions:
+        - "Regulatory/policy ACs (SRC-referenced) may add obligations sourced elsewhere; anchor to that source instead."
+    rationale: "NASA 4.2 valid-constraint vs premature-design distinction plus the team's no-invented-requirements rule; trellis-handoff pattern ties business-level AC to parent PRD rules."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0003, locator: "Section 4.2 (valid constraints vs premature design; paraphrase)" }
+      - { source_id: SRC-0008, locator: "INVEST acronym (Negotiable; paraphrase)" }
+    origin_note: "Exemption list (setup/environment/measurement) is an engineering synthesis to avoid flagging legitimate demonstration detail."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-07"]
+
+  - rule_id: ACA-R007
+    rule_type: analysis
+    statement: "AC ids are checked for uniqueness and convention conformance against the declared (or consistently inferable) project pattern; collisions and unprefixed resets are reference-integrity defects."
+    inputs: [ac_list, project_id_convention]
+    method: |
+      criterion_id: ACA-07
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: id-uniqueness-and-pattern-scan
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria-spec, acceptance-criteria, user-story]
+      evaluation_steps:
+        1. Detect declared convention (docs/style guide) else infer a dominant consistent pattern.
+        2. Check uniqueness within suite and within owner item.
+        3. Check cross-section ambiguity: per-story resets (TC-01) referenced globally without prefix -> Issue.
+        4. Conflicting patterns without a declared convention -> needs-clarification, not defect.
+      evidence_expectations: "The colliding/ambiguous ids verbatim."
+      false_positive_considerations:
+        - "Gherkin scenarios without numeric ids but with unique scenario titles are acceptable when the project's convention is title-based referencing."
+      exceptions:
+        - "Small prose suites (<5 ACs) with unambiguous positional references -> informational at most."
+    rationale: "Findings and tests must cite one AC unambiguously; mirrors traceability ID-integrity inside the suite."
+    authority_level: expert-recommendation
+    source_refs: []
+    origin_note: "Derived from the team's ba-documentation rule to keep approved IDs and this repository's id discipline; expert-recommendation because no registered standard prescribes AC numbering itself."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-04"]
+
+  - rule_id: ACA-R008
+    rule_type: analysis
+    statement: "Ambiguity-word lists (en/vi) are detection triggers only; an Issue requires articulating two competing acceptance interpretations and why the difference matters."
+    inputs: [ac_statement, language_pack_signals, referenced_definitions]
+    method: |
+      criterion_id: ACA-08
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: competing-interpretation-gate
+      applicable_languages: ["en", "vi"]
+      applicable_artifacts: [acceptance-criteria, acceptance-criteria-spec, user-story]
+      evaluation_steps:
+        1. Scan for signals: vague qualifiers (vi: nhanh, nhanh chóng, kịp thời, dễ, dễ dàng, hợp lý; en: fast, easy, reasonable, appropriate, user-friendly), escape clauses ('khi cần thiết', 'as needed'), open lists ('v.v.', 'etc.'), unspecified actor/object/permission/conflict behavior.
+        2. Attempt to construct two defensible accept/reject readings; if construction fails (bound given immediately after, or defined term cited), suppress the finding (anti-FP rule mirroring the vi language-pack).
+        3. Report Issue with: both readings, why the decision diverges, recommended wording, and a testable AC rewrite candidate (vendor requirement).
+        4. Definition lives outside the package -> Not Assessable + clarification request.
+      evidence_expectations: "Verbatim AC phrase plus the two interpretations."
+      false_positive_considerations:
+        - "'Xử lý nhanh chóng' followed by '<= 2 giây' is compliant — the vi language-pack's own anti-FP rule."
+        - "Domain-normalized terms ('timeout', 'retry', 'cache') listed in the project glossary are not ambiguity signals here."
+      exceptions: []
+    rationale: "Unambiguous characteristic (conceptual) operationalized with the vendor competing-interpretation test; reuses re.requirement-quality language-pack signals without re-owning non-AC statements."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Unambiguous; conceptual paraphrase)" }
+      - { source_id: SRC-0002, locator: "Appendix C (ambiguity heuristics; paraphrase)" }
+    origin_note: "Signal vocabulary cross-referenced from skills/requirement-engineering/requirement-quality/language-packs/vi.yaml (owned there); this rule consumes signals at AC granularity only."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-01", "examples/golden-test-cases.yaml#ACA-GTC-05"]
+
+  - rule_id: ACA-R009
+    rule_type: comparison
+    statement: "Pairwise/cluster comparison of ACs sharing a behavior or condition, plus AC-vs-owner-item functional-text comparison; contradictions require overlapping trigger conditions proven from both excerpts."
+    inputs: [ac_list, owner_item_text, terminology_glossary]
+    method: |
+      criterion_id: ACA-09
+      source_type: base-standard
+      normative_level: normative-standard
+      detection_approach: same-condition-conflict-detector
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria-spec, acceptance-criteria]
+      evaluation_steps:
+        1. Cluster ACs by anchored owner item and by referenced behavior/condition keywords.
+        2. Within clusters, compare outcomes under identical conditions; conflicting bounds/results -> contradiction Issue (cite both).
+        3. Detect semantic duplicates: same acceptance decision restated with divergence risk; intentional hierarchy passes only with explicit cross-reference.
+        4. Compare each AC's outcome against the owner item's functional description text; acceptance contradicting its own rule -> Issue against the AC pair anchor evidence.
+        5. Terminology drift check before confirming (terms may look opposed but differ in definition).
+      evidence_expectations: ">=2 verbatim excerpts with ids; the overlapping condition named."
+      false_positive_considerations:
+        - "Different conditions with different outcomes are NOT a contradiction (happy path 24h vs error path retry) — establish condition overlap first."
+        - "AC refinement hierarchy (story-level AC plus epic-level umbrella) with cross-reference is duplication-with-purpose."
+      exceptions:
+        - "Migration/phased bounds explicitly declared (phase 1: 48h, phase 2: 24h) are compliant when phase conditions are stated."
+    rationale: "Set Consistency (conceptual) at AC granularity; vendor checklist pairs 'acceptance criteria and functional descriptions' as a required consistency surface."
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (Consistent; conceptual paraphrase)" }
+      - { source_id: SRC-0004, locator: "Set characteristics (Consistent; paraphrase)" }
+    origin_note: "Mirrors RSQ-R004/R005/R007 methodology (both-sides verbatim citation rule) restricted to AC-involving pairs."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-07"]
+
+  - rule_id: ACA-R010
+    rule_type: analysis
+    statement: "Demonstration method is recognized either per-AC or via a suite-level mapping inside the package; the method's evidence type must plausibly produce the AC's outcome evidence."
+    inputs: [ac_list, suite_method_mapping, qa_conventions]
+    method: |
+      criterion_id: ACA-10
+      source_type: industry-guidance
+      normative_level: engineering-best-practice
+      detection_approach: method-coverage-and-fit-check
+      applicable_languages: ["all"]
+      applicable_artifacts: [acceptance-criteria-spec, acceptance-criteria, user-story]
+      evaluation_steps:
+        1. Collect methods: per-AC tags/columns, or declared suite mapping table.
+        2. For ACs whose outcome is hard to demonstrate casually (timing, volume, auditability, concurrency), require an identified method; for ordinary functional outcomes, an implicit test scenario naming the run suffices.
+        3. Check evidence-type fit: numeric timing -> instrumented/automated measurement; visual layout -> screenshot/manual demo; state change -> data oracle/query check.
+        4. Placeholder methods ('as appropriate') contribute no information -> Issue.
+        5. Method defined in external test plan absent from package -> Not Assessable + request the plan.
+      evidence_expectations: "Method excerpt or mapping row citation; for fit issues, the mismatch statement."
+      false_positive_considerations:
+        - "Do not demand a per-AC method table for suites whose QA convention treats every AC as an automated-story step; convention evidence outranks form."
+        - "Method suggestion (which test level) beyond presence is qa.test-design territory (Planned) — record as delegated observation."
+      exceptions:
+        - "Exploratory-acceptance stories with declared investigation-style acceptance -> Not Applicable with citation."
+    rationale: "INVEST Testable (paraphrase) plus verification-method selection; closes the gap where a decidable outcome has no named proving vehicle."
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0008, locator: "INVEST acronym (Testable; paraphrase — no verbatim quotation)" }
+      - { source_id: SRC-0003, locator: "Section 4.2 (verification method selection; paraphrase)" }
+    origin_note: "Vendor prd-review checklist's 'observable acceptance criteria or test oracle' item informed the evidence-type fit step."
+    validation:
+      status: unvalidated
+      examples: ["examples/golden-test-cases.yaml#ACA-GTC-08"]

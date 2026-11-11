@@ -1,0 +1,413 @@
+# Criteria — Skill: re.srs-review (Schema: schemas/definitions/criterion.schema.json)
+# Evaluates the STRUCTURE and whole-document completeness of an SRS as a document (SRV-01 .. SRV-08).
+# NOT per-requirement wording (-> re.requirement-quality) and NOT intra-set consistency/duplication (-> re.requirement-set-quality).
+
+owner:
+  owner_type: skill
+  owner_id: re.srs-review
+  owner_version: 0.1.0
+
+criteria:
+  - criterion_id: SRV-01
+    statement: "The SRS must contain every required top-level section of the adopted document outline (project template or a recognized standard outline such as IEEE Std 830-1998's recommended structure) with substantive content: Introduction (including Purpose and Scope statements), Overall Description (product perspective, product functions, user characteristics, constraints, assumptions and dependencies), Specific Requirements, and any other mandatory front/back sections — no required section may be absent or heading-only."
+    rationale: "Document-section completeness is a precondition for every other review activity: if a mandatory section (e.g., assumptions and dependencies, or the scope statement) is missing, entire classes of requirements, constraints, and context are structurally unable to appear, and downstream set-quality, validation, and traceability reviews silently evaluate an incomplete baseline. A heading-only section is functionally identical to a missing one."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Recommended SRS outline — 1 Introduction / 2 Overall Description / 3 Specific Requirements + Appendices (recalled at outline level only; see registry access_note)" }
+      - { source_id: SRC-0011, locator: "SRS content elements and practical sectioning (memory-based recall)" }
+      - { source_id: SRC-0005, locator: "Clause 6.4.3 (Software Requirements Definition — requirements are documented in a specification; process-level recall)" }
+    origin_note: "Synthesized from the IEEE Std 830-1998 recommended SRS outline (SRC-0010, recalled at chapter level only — no sub-clause text is quoted), Wiegers & Gilbert's SRS content elements (SRC-0011, memory-based), and the ISO/IEC/IEEE 12207:2017 Clause 6.4.3 process expectation (SRC-0005) as already phrased in the source registry. Section list operationalized against the team's BA document templates."
+    synthesis_note: |
+      name: "Required Section Presence & Non-Emptiness"
+      evaluation_objective: "Verify that the document as a whole exposes the mandatory skeleton of the adopted SRS outline and that each mandatory section carries substantive (non-placeholder, non-empty) content appropriate to its role."
+      pass_conditions:
+        - "Every section required by the adopted outline/template (default: Introduction with Purpose and Scope; Overall Description covering product perspective, product functions, user characteristics, constraints, assumptions/dependencies; Specific Requirements) exists in the document."
+        - "Each required section contains substantive content, or its omission is explicitly covered by a declared tailoring decision."
+        - "When no project template is supplied, the evaluation uses the recognized standard outline and reports the assumed baseline in review metadata."
+      issue_conditions:
+        - "A mandatory top-level or template-mandated second-level section is entirely absent from the document."
+        - "A mandatory section exists only as a heading with no body content and no tailoring declaration."
+        - "The scope statement or product-functions overview is missing, making the document's boundary undeclarable (structural gap; semantic scope coverage belongs to re.requirement-set-quality RSQ-01)."
+      required_context:
+        - "full_srs_document (document_completeness_mode: full)"
+        - "adopted_template_or_declared_outline (optional: fall back to recognized standard outline, flagged as assumption)"
+      optional_context:
+        - "project_document_template"
+        - "tailoring_declaration"
+        - "previous_review_baseline"
+      standalone_assessable_when: "Assessable when the complete document (all chapters) is supplied; the outline baseline may be assumed from the recognized standard and must then be recorded as an assumption."
+      not_assessable_conditions:
+        - "Only a section, chapter, or fragment of the SRS is provided (document_completeness_mode: partial) — whole-document section presence cannot be judged from a slice."
+        - "The adopted outline/template is unknown AND the supplied artifact is not recognizable as an SRS at all."
+      not_applicable_conditions:
+        - "Review scope explicitly restricted to a set of individual requirement items rather than the document (belongs to re.requirement-quality)."
+      evidence_expectations:
+        - "Document section inventory (extracted heading list with locators) demonstrating the absent or empty mandatory section."
+        - "Quote of the heading and, for heading-only sections, the empty body region locator."
+      scope_boundaries:
+        in_scope: "Whole-document skeleton: existence and non-emptiness of mandated sections in the SRS as a document."
+        delegated_to_other_skills:
+          - "Whether declared in-scope features are covered by at least one requirement in the set -> re.requirement-set-quality (RSQ-01)"
+          - "Missing companion/lifecycle requirements inside covered scope -> re.requirement-set-quality (RSQ-02)"
+          - "Wording quality of any individual requirement -> re.requirement-quality (RQ-01 .. RQ-09)"
+          - "Whether the scope/needs themselves satisfy stakeholders -> re.requirement-validation (RVAL-01)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-01"
+        - "examples/golden-test-cases.yaml#SRV-GTC-04"
+
+  - criterion_id: SRV-02
+    statement: "The SRS must carry document-control front matter: a document identifier/title, a version designation, and a revision history that records each published change (version, date, author, description); approval records required by the adopted template must be present with their fields populated or explicitly pending."
+    rationale: "An SRS is a controlled engineering baseline. Without version designation and revision history, reviewers and downstream teams cannot determine which version is authoritative, what changed between reviews, or who approved the content, which silently invalidates every prior review conclusion and traceability snapshot."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "Practical SRS elements: title page/document identification and revision history table (memory-based recall)" }
+      - { source_id: SRC-0010, locator: "Recommended SRS structure — front matter/title page practice (outline-level recall only)" }
+    origin_note: "Synthesized from Wiegers & Gilbert's practical SRS elements (SRC-0011, memory-based) and the title-page/foreword practice of the IEEE Std 830-1998 recommended structure (SRC-0010, outline-level recall). Not claimed as an ISO/IEC/IEEE 29148 clause requirement."
+    synthesis_note: |
+      name: "Document-Control Front Matter & Revision History"
+      evaluation_objective: "Verify the existence and basic currency of the document-control elements (identifier, version, revision history, template-required approval fields) of the SRS as a versioned artifact."
+      pass_conditions:
+        - "Document identifier, version designation, and revision history table are present; entries describe each published revision."
+        - "Where the version designation implies multiple revisions, at least one dated revision entry exists."
+        - "Approval/sign-off fields required by the template are present (values may be explicitly 'pending' with rationale at early baselines)."
+      issue_conditions:
+        - "No revision history section exists in a document labeled as a versioned baseline."
+        - "Revision history exists but contradicts the declared current version (e.g., header says v1.4, table's latest row is v1.2)."
+        - "Template-mandated approval/sign-off block is entirely absent (as opposed to present-but-pending)."
+      required_context:
+        - "full_srs_document_or_front_matter (document_completeness_mode: full, or the supplied slice includes the front matter)"
+        - "declared_version_designation"
+      optional_context:
+        - "project_document_template"
+        - "change_management_conventions"
+      standalone_assessable_when: "Assessable whenever the document front matter is included in the supplied material, even if the requirement chapters are not."
+      not_assessable_conditions:
+        - "Front matter was stripped or not supplied (e.g., a chapter-only export), so its completeness cannot be judged."
+      not_applicable_conditions:
+        - "Informal working drafts that the project explicitly declares to be outside document-control practice (declared in project context)."
+      evidence_expectations:
+        - "Locator + excerpt of the title/version block."
+        - "Locator + excerpt (or absence confirmation) of the revision history table."
+      scope_boundaries:
+        in_scope: "Existence and internal agreement of document-control metadata within the SRS front matter."
+        delegated_to_other_skills:
+          - "Whether requirement CONTENT changed correctly per change request / baseline management -> out of all current re.* skills (baseline/change management is an explicit domain non-goal, see domain README)"
+          - "Trace snapshots across versions -> re.requirement-traceability (RTR-04, when status/target integrity is affected)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-02"
+        - "examples/golden-test-cases.yaml#SRV-GTC-10"
+
+  - criterion_id: SRV-03
+    statement: "The table of contents, heading hierarchy/numbering, and internal section cross-references of the SRS must agree with the document's actual structure: every TOC entry matches an existing heading (number and title), heading numbering is sequential and non-duplicated, and every internal reference ('see Section x.y', 'as defined in Mục 3.4', appendix/figure/table references) resolves to an existing element of the document."
+    rationale: "Navigation defects are how sections silently fork: readers follow a stale TOC entry or a dangling 'see Section 3.4' into the wrong content, implementations bind to the wrong clause, and two divergent copies of the same specification region persist unnoticed. Dangling references in a requirements document are contractually ambiguous even when the referenced content exists under a different number."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "SRS quality-in-use practice: an SRS must be consistent and maintainable in its structure and references (memory-based recall)" }
+      - { source_id: SRC-0010, locator: "Numbered outline convention of the recommended SRS structure (outline-level recall only)" }
+    origin_note: "Synthesized from document-maintenance practice in Wiegers & Gilbert (SRC-0011, memory-based) and the numbered-outline convention of the IEEE Std 830-1998 recommended structure (SRC-0010, outline-level recall). The reconciliation checks themselves are document-engineering best practice operationalized by this skill."
+    synthesis_note: |
+      name: "TOC, Heading & Internal Cross-Reference Integrity"
+      evaluation_objective: "Reconcile the declared navigation surface (TOC, numbering, internal references) against the actual heading tree and element inventory of the document."
+      pass_conditions:
+        - "Every TOC entry corresponds to an actual heading with the same number and title (tolerating declared front/back matter exclusions)."
+        - "Heading numbers are sequential within each level with no gaps and no duplicated numbers."
+        - "Every internal section/figure/table/appendix cross-reference resolves to an existing element with matching subject."
+      issue_conditions:
+        - "A TOC entry names a heading that does not exist, or omits an existing mandatory heading (beyond front/back-matter conventions)."
+        - "Two sections share the same number, or numbering skips after rework leaving stale entries elsewhere."
+        - "An internal reference points to a non-existent or renumbered section, or resolves to a section on an unrelated subject."
+      required_context:
+        - "full_srs_document_with_toc (TOC + body headings supplied; partial exports usually lack one of the two)"
+      optional_context:
+        - "rendered_pdf_or_docx_pagination"
+        - "heading_style_metadata"
+      standalone_assessable_when: "Assessable whenever both a TOC (or declared equivalent) and the body headings are present; with only body headings, the numbering-sequence and internal-reference subsets remain assessable."
+      not_assessable_conditions:
+        - "The TOC and/or body headings are absent from the supplied material (e.g., plain-text export stripped the TOC)."
+        - "Markdown/ASCII artifacts without any numbering convention declared and no numbering present (nothing to reconcile)."
+      not_applicable_conditions:
+        - "Documents where the template explicitly declares no TOC/numbering (flat single-page specs)."
+      evidence_expectations:
+        - "Two-part evidence: excerpt + locator of the TOC entry/reference text, and excerpt + locator of the actual heading/element (or its confirmed absence within the full document inventory)."
+      scope_boundaries:
+        in_scope: "Navigation and reference integrity INSIDE one document (TOC vs headings, intra-document references)."
+        delegated_to_other_skills:
+          - "Broken references to requirement IDs / trace targets across artifacts -> re.requirement-traceability (RTR-04)"
+          - "Broken intra-set cross-references between requirement statements (per REQ-99) -> re.requirement-set-quality (RSQ-05)"
+          - "Dangling 'see Section TBD' inside one requirement sentence -> re.requirement-quality (RQ-04)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-02"
+        - "examples/golden-test-cases.yaml#SRV-GTC-10"
+
+  - criterion_id: SRV-04
+    statement: "The Specific Requirements region of the SRS must provide a dedicated place for each mandated requirement class: external interface specifications (with the interface classes required by the system — user, hardware, software, communications), non-functional/performance requirements, system feature groups, and data description (inline or by explicit reference to a data-model/ERD artifact) — each populated, or its omission explicitly tailored out with rationale."
+    rationale: "Absent interface and data sections are the most common structural cause of 'invisible' requirements: teams discover integration and data obligations at build or test time because the document offered nowhere for them to be stated. Requiring a place per class (or a declared tailoring) turns omission into an explicit, reviewable decision."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Chapter 3 Specific Requirements — outline-level subsection names incl. External Interfaces (user, hardware, software, communications), performance, system features, data (recalled at outline level only)" }
+      - { source_id: SRC-0011, locator: "SRS content elements: interface and data requirements coverage (memory-based recall)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (bounded, comprehensible set of requirements — conceptual level, as already phrased in the source registry)" }
+    origin_note: "Synthesized from the outline-level subsection names of Chapter 3 of the IEEE Std 830-1998 recommended SRS structure (SRC-0010 — recalled at outline level only, no sub-clause text quoted), Wiegers & Gilbert's SRS content elements (SRC-0011, memory-based), and the set-boundedness concept of ISO/IEC/IEEE 29148:2018 Clause 5.2.6 (SRC-0001) at the conceptual level already recorded in the source registry."
+    synthesis_note: |
+      name: "Interface, NFR, Feature & Data Section Coverage"
+      evaluation_objective: "Verify the Specific Requirements region contains a structural home for each mandated requirement class: external interfaces per class, non-functional requirements, system features, and data description (inline or referenced data-model artifact)."
+      pass_conditions:
+        - "Interface sections exist for each externally-facing class relevant to the system (UI, hardware, software/API, communications/integration), each carrying content or a pointer to a named interface artifact."
+        - "A non-functional/performance requirements region exists and is populated or cross-referenced."
+        - "A data description region exists (data model, ERD reference, or data dictionary pointer)."
+        - "Any class without an applicable interface is explicitly declared not-applicable (e.g., 'no hardware interfaces — web/mobile software product') in a tailoring or assumptions statement."
+      issue_conditions:
+        - "A mandated interface class has neither a section, a cross-reference, nor a tailoring declaration (e.g., the system integrates with a payment gateway but no software/communications interface region exists anywhere)."
+        - "Non-functional requirements have no structural home (scattered with no NFR section) or the section exists but is empty."
+        - "Data description is entirely absent and no data-model/ERD artifact is referenced."
+      required_context:
+        - "full_srs_document (document_completeness_mode: full)"
+      optional_context:
+        - "context_diagram_or_external_system_list"
+        - "project_document_template"
+        - "tailoring_declaration"
+      standalone_assessable_when: "Assessable when the complete document (or the full Specific Requirements region plus the tailoring/scope sections) is supplied."
+      not_assessable_conditions:
+        - "A chapter/section slice was supplied (document_completeness_mode: partial) so absence elsewhere cannot be established."
+        - "The external-system inventory needed to decide interface-class applicability is unknown AND no scope/product-perspective statement exists to infer it."
+      not_applicable_conditions:
+        - "Interface classes the document's tailoring/assumptions explicitly declare out of scope for the product (this is Compliant under pass_conditions when declared; genuinely not-applicable only for non-SRS-shaped artifacts)."
+      evidence_expectations:
+        - "Section inventory excerpt showing the missing/empty region."
+        - "When the claim is 'no structural home for NFRs/data', the search scope (full heading list) must be included in evidence."
+      scope_boundaries:
+        in_scope: "Structural presence/population of mandated requirement classes' sections in the document."
+        delegated_to_other_skills:
+          - "Completeness/quality of an individual interface requirement statement -> re.requirement-quality (RQ-04, RQ-07)"
+          - "Whether declared scope features/actors/interfaces are covered by actual requirement items -> re.requirement-set-quality (RSQ-01)"
+          - "Diagram content correctness of the referenced ERD/data model -> md.erd / md.uml (planned); this skill only checks the reference exists"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-01"
+        - "examples/golden-test-cases.yaml#SRV-GTC-05"
+
+  - criterion_id: SRV-05
+    statement: "Requirements must be allocated consistently to the document structure: the product-functions/feature overview must map onto the system-feature sections of the Specific Requirements region (each declared feature has a structural home, each feature section corresponds to a declared feature), and the document's stated requirement identifier scheme (e.g., FR-nn, NFR-nn patterns declared in a conventions section) must be used, correctly formed, and consistently applied across all sections of the document."
+    rationale: "Misallocation and scheme drift (FR items under an NF- prefix, a feature summarized in §2.2 but absent from §3, orphan requirement blocks outside any feature section) make whole regions of the document undiscoverable and corrupt every coverage and impact calculation that keys on section membership and ID prefixes — long before any wording issue would be noticed."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0011, locator: "Organizing SRS requirements by feature and consistent requirement identification (memory-based recall)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.6 (characteristics of a set of requirements — comprehensible organization, conceptual level, as phrased in the registry)" }
+      - { source_id: SRC-0010, locator: "Chapter 2/Chapter 3 function-list-to-features correspondence convention of the recommended outline (outline-level recall only)" }
+    origin_note: "Synthesized from Wiegers & Gilbert's feature-based SRS organization practice (SRC-0011, memory-based), the comprehensible-set concept of SRC-0001 Clause 5.2.6 (conceptual level), and the outline-level 2.2-functions ↔ 3.x-features correspondence convention of the IEEE Std 830-1998 structure (SRC-0010). ID schemes themselves are project conventions — only the document's OWN declared scheme is enforced here."
+    synthesis_note: |
+      name: "Feature Allocation & Identifier-Scheme Consistency"
+      evaluation_objective: "Verify the structural mapping between the declared feature overview and the feature sections, and uniform application of the document's declared requirement ID scheme across sections."
+      pass_conditions:
+        - "Every feature listed in the product-functions overview has a corresponding feature section (or an explicit deferral/phase note) in the Specific Requirements region."
+        - "Every feature section maps back to a declared feature (no structural orphans)."
+        - "Requirement identifiers follow the document's own declared pattern in every section; the sequence is continuous within each prefix (documented renumbering/reservation notes accepted)."
+      issue_conditions:
+        - "A declared feature (or 'out of order' feature name) exists in §2.2 but no corresponding section, and no allocation decision is recorded."
+        - "Requirement blocks appear outside any feature/section allocation (floating at chapter end under no heading)."
+        - "The declared ID scheme is violated in some sections (e.g., scheme says FR-nn, but section 3.7 numbers functional items NF-301, or two blocks restart FR-01 without a declared per-section prefix scheme)."
+      required_context:
+        - "full_srs_document (document_completeness_mode: full)"
+        - "declared_id_scheme (conventions section or template; if undeclared, scheme-violation subset is not assessable)"
+      optional_context:
+        - "project_requirement_id_conventions"
+        - "feature_priority_list"
+      standalone_assessable_when: "Feature-allocation reconciliation is assessable with the full document; ID-scheme checking is assessable wherever a declared scheme exists and at least two requirement-bearing regions are supplied."
+      not_assessable_conditions:
+        - "Partial slice supplied: absent features may live in unsupplied chapters."
+        - "No ID scheme declared anywhere (neither document conventions nor project context)."
+      not_applicable_conditions:
+        - "Documents whose template declares no identifier scheme and no feature overview section (then only floating-block detection applies, and it passes trivially if all requirements sit under feature headings)."
+      evidence_expectations:
+        - "Excerpt + locator of the declared feature/function list entry and the (missing or mismatched) feature section heading."
+        - "Excerpt + locator of the declared ID convention and the violating identifier instances (at least one per pattern class)."
+      scope_boundaries:
+        in_scope: "Structural allocation (feature list ↔ sections) and document-wide uniformity of the declared ID scheme."
+        delegated_to_other_skills:
+          - "One requirement violating the project sentence/ID template -> re.requirement-quality (RQ-09)"
+          - "Semantic duplication of the same obligation across two sections -> re.requirement-set-quality (RSQ-04)"
+          - "Requirements missing from a traceability matrix/RTM -> re.requirement-traceability (RTR-06)"
+          - "Duplicate/colliding requirement IDs used as trace endpoints -> re.requirement-traceability (RTR-04 / identifier integrity)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-08"
+        - "examples/golden-test-cases.yaml#SRV-GTC-10"
+
+  - criterion_id: SRV-06
+    statement: "Referenced external material must resolve: every entry in the SRS's References/footnotes list must correspond to a document that exists and is identified in the review corpus or explicitly catalogued with title and version, and every appendix or annex invoked normatively from the document body must exist in the document (body-referenced appendices must not be missing; existing unreferenced appendices are recorded as observations, not defects)."
+    rationale: "SRSs are contract documents that delegate normative content to ICDs, policies, data dictionaries, and appendices. A referenced document that is not in the corpus means the 'requirement' actually lives somewhere nobody reviewed — the document reads as complete while its content is not. Missing body-referenced appendices silently truncate the requirement set the reader receives."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: official-standard
+    source_refs:
+      - { source_id: SRC-0010, locator: "Recommended SRS outline — Introduction/References practice and appendices (outline-level recall only)" }
+      - { source_id: SRC-0011, locator: "Practical guidance on referencing external documents instead of duplicating content, and keeping referenced sources available (memory-based recall)" }
+      - { source_id: SRC-0001, locator: "Clause 5.2.5 (Complete — valid references, conceptual level, as phrased in the registry)" }
+    origin_note: "Synthesized from the outline-level References/appendices practice of IEEE Std 830-1998 (SRC-0010, recalled at outline level only), the reference-not-duplicate practice of Wiegers & Gilbert (SRC-0011, memory-based), and the 'valid references' aspect of completeness in SRC-0001 Clause 5.2.5 at the conceptual level recorded in the registry. The individual-statement side ('see ICD-04' inside one requirement sentence) stays with re.requirement-quality; this criterion owns the document-level reference apparatus."
+    synthesis_note: |
+      name: "Referenced Documents, Footnotes & Appendix Resolution"
+      evaluation_objective: "Reconcile the document's reference apparatus (References list, footnotes, normative appendix invocations) against the review corpus inventory and the document's own appendix inventory."
+      pass_conditions:
+        - "Each References-list entry is identifiable (title + version) and either present in the review corpus or explicitly catalogued as an external public standard/named artifact."
+        - "Every footnote/citation marker in the body maps to a listed reference entry (and vice versa: list entries are not fabricated)."
+        - "Every appendix/annex/figure/table referenced normatively from the body exists in the document."
+      issue_conditions:
+        - "A body reference to 'Appendix D' exists while the document's appendix inventory ends at C (2-artifact evidence: reference excerpt + appendix inventory)."
+        - "A References-list entry that the body uses normatively cannot be resolved in the provided corpus inventory (evidence: reference entry excerpt + corpus inventory absence)."
+        - "A body citation/footnote has no corresponding entry in the References list."
+      required_context:
+        - "full_srs_document (references list + body citations + appendix inventory)"
+        - "review_corpus_inventory (for referenced-DOCUMENT resolution; without it only appendix/footnote-internal checks are assessable)"
+      optional_context:
+        - "shared_document_repository_metadata"
+        - "prior_baseline_reference_list"
+      standalone_assessable_when: "Appendix and footnote-internal reconciliation is assessable from the document alone; referenced-external-document existence requires the corpus inventory (comparison rule — two-artifact evidence)."
+      not_assessable_conditions:
+        - "No review-corpus inventory was provided AND the check concerns existence of an external referenced document (absence may just be an unuploaded file)."
+        - "Partial document slice without the References list or appendix inventory."
+      not_applicable_conditions:
+        - "Self-contained SRSs that reference no external documents and no appendices (list absent by design, nothing to resolve)."
+      evidence_expectations:
+        - "TWO-PART evidence for external-document resolution: (1) exact excerpt + locator of the References-list entry (or body citation), (2) excerpt/summary of the review-corpus inventory demonstrating absence (or the resolved entry)."
+        - "Two-part evidence for appendix resolution: body reference excerpt + document appendix inventory."
+      scope_boundaries:
+        in_scope: "Existence/resolution of the document's reference apparatus against the corpus and its own appendices."
+        delegated_to_other_skills:
+          - "Content quality of the referenced document itself -> that document's own review under the matching skill"
+          - "Broken trace-link target IDs in an RTM -> re.requirement-traceability (RTR-04)"
+          - "A single requirement sentence delegating to an unsupplied artifact -> re.requirement-quality (RQ-04 Not Assessable path)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-03"
+
+  - criterion_id: SRV-07
+    statement: "The released SRS must be free of document-level placeholders and unresolved draft scaffolding: no section/subsection whose body is only 'TBD', 'TODO', 'intentionally left blank' without a declared tailoring rationale, no unfilled template instruction text, and no empty mandatory table/diagram slot presented as final content."
+    rationale: "Section-level placeholders are how baselines pass review while being silently unfinished: a reader skimming a complete-looking TOC with '[TBD]' bodies cannot distinguish agreed scope from missing decisions, and downstream estimation/verification treats the document as final. The NASA guidance and set-level sibling skill track statement- and cluster-level TBD; this criterion closes the whole-section hole."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: major
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0002, locator: "Appendix C (Completeness & TBD elimination)" }
+      - { source_id: SRC-0011, locator: "Practical SRS review guidance on unresolved sections and deferred content (memory-based recall)" }
+    origin_note: "Synthesized from the TBD-elimination guidance of NASA SP-2016-6105 Rev2 Appendix C (SRC-0002 — the locator phrasing is already used by re.requirement-set-quality RSQ-02 in this registry) and Wiegers & Gilbert's practical SRS review guidance (SRC-0011, memory-based). Deliberately distinct from RSQ-R003, which detects deferred requirement CLUSTERS inside populated sections."
+    synthesis_note: |
+      name: "Placeholder & Unresolved Section Freedom"
+      evaluation_objective: "Scan the full document skeleton for placeholder bodies, template scaffolding left in place, and blank mandatory regions that are not covered by an explicit deferral/tailoring decision."
+      pass_conditions:
+        - "No section body consists solely of TBD/TODO/lorem/template-instruction text."
+        - "Genuinely deferred content is recorded in an open-issues/assumptions register with owner and target release, not as a bare placeholder."
+        - "Optional sections the project chose not to deliver carry an explicit 'not applicable — rationale' statement."
+      issue_conditions:
+        - "A mandatory or declared section exists as a heading with only a placeholder marker ('[TBD]', 'sẽ bổ sung sau') as body."
+        - "Template instruction text ('Mô tả ... tại đây', '<fill in>') survives into the released document."
+        - "An entire table/diagram slot (glossary table, ERD figure) is announced ('xem Hình 2.1') but the figure/table region is empty."
+      required_context:
+        - "full_srs_document (document_completeness_mode: full)"
+      optional_context:
+        - "open_issues_register"
+        - "template_instruction_markers"
+      standalone_assessable_when: "Assessable for the supplied portions of the document in full mode; in partial mode only the placeholders visible inside the slice are confirmable (absence elsewhere Not Assessable)."
+      not_assessable_conditions:
+        - "Partial slice supplied and the question is whether OTHER sections are placeholders."
+      not_applicable_conditions:
+        - "Draft-status documents explicitly marked 'working draft — not for baseline' when the review scope does not request draft hygiene."
+      evidence_expectations:
+        - "Exact excerpt + locator of the placeholder body and the governing section heading."
+        - "If claimed deferred legitimately: excerpt of the open-issues register entry that covers it."
+      scope_boundaries:
+        in_scope: "Whole-section/whole-subsection placeholders and template scaffolding in the released document."
+        delegated_to_other_skills:
+          - "Inline TBD inside a single requirement sentence -> re.requirement-quality (RQ-04)"
+          - "Deferred requirement clusters / missing companions inside populated sections -> re.requirement-set-quality (RSQ-02 / RSQ-R003)"
+          - "Missing decisions behind the placeholder (what should be written) -> re.requirement-validation and business owners, out of assessment scope"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-08"
+
+  - criterion_id: SRV-08
+    statement: "Each chapter/section of the SRS must keep its content within the abstraction the document's own structure declares for it: regions defined as requirement-capturing (e.g., Specific Requirements / System Features) must not carry normative design or implementation specification regions (database schema design, chosen framework/component architecture, screen-implementation specifications) as their content, except where a template explicitly permits design constraints."
+    rationale: "Chapter-level design leakage converts a requirements contract into an implicit design contract: alternative solutions become unimplementable-by-definition, designers stop reading the SRS as a WHAT document, and the review corpus loses any record that the design choice was ever justified. This is distinct from one requirement statement embedding premature implementation detail (RQ-02) — here whole sections drift across the abstraction boundary."
+    applies_to:
+      - srs
+      - system-requirement-spec
+    default_severity_hint: minor
+    authority_level: industry-best-practice
+    source_refs:
+      - { source_id: SRC-0003, locator: "Section 4.2 (level of abstraction; valid constraints vs premature design solutions)" }
+      - { source_id: SRC-0011, locator: "SRS should specify requirements, not design; design sections belong in SDD (memory-based recall)" }
+      - { source_id: SRC-0010, locator: "Chapter 3 specific-requirements placement in the recommended outline (outline-level recall only)" }
+    origin_note: "Synthesized from the abstraction-level and valid-constraint-vs-premature-design guidance of NASA SP-2016-6105 Rev2 Section 4.2 (SRC-0003 — scope as already phrased in the source registry), Wiegers & Gilbert's requirements-not-design guidance (SRC-0011, memory-based), and the chapter-role convention of the SRC-0010 outline. A sibling of RQ-02 and RSQ-06 but operating on SECTIONS, not statements or classification tags."
+    synthesis_note: |
+      name: "Section-Level Abstraction Discipline"
+      evaluation_objective: "Detect whole regions whose content type violates the abstraction their own heading/template role declares — design or implementation specification nested inside requirements-defined sections."
+      pass_conditions:
+        - "Requirement-defined sections contain obligations/capabilities/constraints, not chosen-architecture or schema-design regions."
+        - "Where implementation is mandated by an external constraint, it appears as a declared constraint (in constraints/assumptions or interface sections), not as a design specification region."
+        - "Design material lives in a design document or a template-declared appendix marked informative."
+      issue_conditions:
+        - "A chapter declared 'requirements only' (by template or its own preamble) contains a normative 'Database Design' / 'UI Implementation' / 'Microservices Architecture' subsection with schema/DDL/component specifications."
+        - "A solution design region inside Specific Requirements replaces the corresponding feature requirements (the WHAT for that feature is nowhere stated)."
+      required_context:
+        - "full_srs_document or a complete chapter with its declared role (template/heading/preamble)"
+      optional_context:
+        - "architecture-decisions.md"
+        - "project_document_template"
+      standalone_assessable_when: "Assessable wherever a requirement-defined region and its declared role are both present in the supplied material; per-statement abstraction issues remain owned by re.requirement-quality even inside an otherwise clean section."
+      not_assessable_conditions:
+        - "The section's declared role is unknown (untitled fragments) so 'requirements-only vs design-permitted' cannot be established."
+      not_applicable_conditions:
+        - "Documents explicitly scoped as design-while-requirements (e.g., prescriptive legacy-migration specs the template declares to contain design)."
+      evidence_expectations:
+        - "Excerpt + locator of the section role declaration (template entry/heading/preamble) and excerpt + locator of the design region it forbids (two-part evidence)."
+      scope_boundaries:
+        in_scope: "Section/chapter-level abstraction boundary violations in the document structure."
+        delegated_to_other_skills:
+          - "Premature implementation detail inside ONE requirement statement -> re.requirement-quality (RQ-02)"
+          - "Peer requirements in a section mixing business vision with field-validation granularity -> re.requirement-set-quality (RSQ-06)"
+          - "Whether the leaked design is technically sound -> sa.* / fr.technical-feasibility (planned)"
+    depends_on_items: []
+    validation:
+      status: unvalidated
+      examples:
+        - "examples/golden-test-cases.yaml#SRV-GTC-09"
